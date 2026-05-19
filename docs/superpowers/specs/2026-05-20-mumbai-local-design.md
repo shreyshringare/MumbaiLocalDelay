@@ -8,7 +8,7 @@
 
 ## One-Line Pitch
 
-End-to-end data pipeline that ingests real Mumbai suburban railway GTFS data, generates statistically-grounded delay simulations, detects anomalies with Prophet, and serves an interactive 5-tab dashboard — deployed live on Railway.app.
+End-to-end data pipeline that ingests real Mumbai suburban railway GTFS data, generates statistically-grounded delay simulations, detects anomalies with Prophet, and serves an interactive **7-tab dashboard** with confidence intervals, SQL analytics, data quality metrics, and business insights — deployed live on Railway.app.
 
 ---
 
@@ -203,10 +203,11 @@ mumbai-local/
 
 ### Phase 5: DuckDB Store + Core Analytics
 - `DelayStore` class: schema init, upsert, query methods
-- Delay matrix: station × hour × weekday → avg/std delay
+- Delay matrix: station × hour × weekday → avg/std delay + 95% CI
 - Route rankings: worst/best N stations per line
 - Peak vs off-peak comparison
 - Line comparison: Central vs Western vs Harbour (30-day trend, on-time %)
+- `analysis/sql_queries.py`: window functions, CTEs, percentile queries, rolling averages (SQL showcase for interviews)
 
 ### Phase 6: Prophet Anomaly Detection
 - `DelayAnomalyDetector` per station
@@ -216,12 +217,14 @@ mumbai-local/
 - Cache fitted models to disk (avoid re-fitting on each run)
 
 ### Phase 7: Dashboard + Deployment
-- Plotly Dash app with 5 tabs:
+- Plotly Dash app with 7 tabs:
   - Tab 1: Folium map (stations color-coded by current delay severity)
   - Tab 2: Heatmap (station × hour, filter by line/weekday)
   - Tab 3: Rankings (worst/best stations, peak toggle)
   - Tab 4: Anomaly alerts (today's flagged stations, actual vs expected)
   - Tab 5: Line comparison (30-day trend, on-time %)
+  - Tab 6: Data Quality (freshness, missing windows, pipeline health)
+  - Tab 7: Business Insights (plain-English callouts, economic impact)
 - Dark theme, mobile-responsive layout
 - Railway.app `Procfile` + deployment config
 - Full README: architecture diagram, results table, live URL, interview Q&A
@@ -244,6 +247,36 @@ Cards for each anomalous station today. Shows: actual delay, expected (yhat), up
 
 **Tab 5 — Line Comparison**
 Line chart: Central vs Western vs Harbour — 30-day avg delay trend. Bar chart: on-time percentage per line. Summary stats table.
+
+**Tab 6 — Data Quality**
+Per-station freshness timestamps. % stations with complete data vs flagged missing windows. Pipeline health score (green/yellow/red). Missing data log — which stations, which hours. Finance/MSCI-grade data provenance.
+
+**Tab 7 — Business Insights**
+Plain-English callouts: "Dadar CR costs commuters ~42,000 delay-minutes daily." Economic impact = delay-minutes × avg wage × commuter volume. Top 3 actionable findings. Week-over-week trend (improving/worsening).
+
+---
+
+## SQL Analytics Layer (for JPM/MS/Nomura/Barclays interviews)
+
+File: `analysis/sql_queries.py` — DuckDB queries demonstrating SQL depth:
+
+- Window functions: `RANK() OVER (PARTITION BY line ORDER BY avg_delay DESC)`
+- CTEs: multi-step delay trend computation
+- Percentile functions: `PERCENTILE_CONT(0.95)` for p95 delay per station
+- Rolling averages: 7-day and 30-day moving avg delay per line
+- Conditional aggregation: peak vs off-peak in single query
+
+These queries are surfaced in the dashboard AND documented in README with SQL shown — signals SQL fluency to interviewers.
+
+---
+
+## Statistical Rigor (for finance companies)
+
+All metrics report mean ± std dev + 95% confidence interval, not just averages. Computed via Polars:
+- `pl.col("delay_minutes").mean()` + `pl.col("delay_minutes").std()`
+- CI: `mean ± 1.96 * (std / sqrt(n))`
+- Dashboard shows error bars on all charts
+- Hover tooltip: "Avg: 6.2 min | 95% CI: [5.8, 6.6] | n=1,240 trains"
 
 ---
 
