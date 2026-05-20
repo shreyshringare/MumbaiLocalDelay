@@ -49,8 +49,8 @@ def make_station_map(
 
     for row in stops.iter_rows(named=True):
         station = row["station_name"]
-        lat = row.get("stop_lat", 0.0)
-        lon = row.get("stop_lon", 0.0)
+        lat = row.get("latitude", row.get("stop_lat", 0.0))
+        lon = row.get("longitude", row.get("stop_lon", 0.0))
         line = row.get("line", "Unknown")
         s = stats.get(station, {})
         avg_delay = s.get("avg_delay", 0.0) or 0.0
