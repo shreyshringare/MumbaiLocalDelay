@@ -6,6 +6,20 @@ Mumbai local trains carry **7.5 million passengers daily**. This project identif
 
 ---
 
+## Skills Demonstrated
+
+| Skill | Where |
+|---|---|
+| **SQL** — window functions, CTEs, LAG, PERCENTILE_CONT, conditional aggregation | `analysis/sql_queries.py` |
+| **Data pipeline** — GTFS ingestion, Polars transforms, DuckDB analytical store | `pipeline/` |
+| **Python** — typed classes, parameterized queries, pure chart factories, 39 tests | `pipeline/store.py`, `dashboard/charts.py`, `tests/` |
+| **Data visualization** — 7-tab interactive dashboard, heatmaps, trend lines, CI bars | `dashboard/` |
+| **Anomaly detection** — Prophet time series, 95% confidence bounds, severity classification | `analysis/anomaly.py` |
+| **Data quality** — freshness monitoring, row counts, graceful empty states | `pipeline/store.py`, dashboard Data Quality tab |
+| **Business translation** — delay → passenger-hours lost → economic impact estimate | `dashboard/charts.py`, Business Insights tab |
+
+---
+
 ## Key Findings
 
 | Question | Answer |
