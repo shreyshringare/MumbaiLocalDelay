@@ -83,6 +83,8 @@ class DelayStore:
                 station_name,
                 AVG(avg_delay)   AS mean_delay,
                 MIN(avg_delay)   AS min_delay,
+                AVG(ci_lower)    AS mean_ci_lower,
+                AVG(ci_upper)    AS mean_ci_upper,
                 AVG(on_time_pct) AS mean_on_time_pct
             FROM delays
             WHERE line = ?
