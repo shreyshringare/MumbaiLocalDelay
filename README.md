@@ -161,6 +161,12 @@ Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
 ### Business Insights — economic impact
 ![Business Insights](docs/screenshots/tab_business_insights.png)
 
+### Prediction — Prophet 7-day forecast with 95% CI
+![Prediction](docs/screenshots/tab_prediction.png)
+
+### Correlation — station co-delay Pearson r heatmap
+![Correlation](docs/screenshots/tab_correlation.png)
+
 ---
 
 ## Architecture
