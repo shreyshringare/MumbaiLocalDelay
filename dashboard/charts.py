@@ -93,7 +93,7 @@ def make_rankings_bar(df: pl.DataFrame, title: str, color: str = "#E63946") -> g
         title=title,
         xaxis_title="Avg Delay (min)",
         yaxis={"categoryorder": "total ascending"},
-        **_dark_layout(),
+        **_dark_layout(margin={"l": 220, "r": 40, "t": 50, "b": 60}),
     )
     return fig
 
