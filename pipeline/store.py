@@ -180,7 +180,11 @@ class DelayStore:
         return df
 
     def daily_avg(self, station: str) -> pl.DataFrame:
-        """Daily avg delay for a station (all hours aggregated). Used by forecasting."""
+        """Daily avg delay for a station (all hours aggregated). Used by forecasting.
+
+        Uses .pl() instead of .arrow()+from_arrow() because .arrow() raises on empty
+        results (unknown station) — .pl() handles the empty case correctly.
+        """
         df = self.conn.execute(
             """
             SELECT
