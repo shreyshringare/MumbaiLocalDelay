@@ -5,9 +5,19 @@ import polars as pl
 from pipeline.store import DelayStore
 
 
+def _arrow_to_df(cursor) -> pl.DataFrame:
+    """Convert DuckDB cursor result to Polars DataFrame, handling empty results.
+
+    DuckDB's .arrow() returns a schema-less RecordBatchReader on empty queries,
+    which pl.from_arrow cannot convert. Using fetch_arrow_table() returns a
+    proper Arrow Table with schema intact.
+    """
+    return pl.from_arrow(cursor.to_arrow_table())
+
+
 def line_summary(store: DelayStore) -> pl.DataFrame:
     """Summary stats per line: avg delay, on-time %, p95 delay."""
-    result = store.conn.execute("""
+    cursor = store.conn.execute("""
         SELECT
             line,
             AVG(avg_delay)                    AS avg_delay,
@@ -18,17 +28,15 @@ def line_summary(store: DelayStore) -> pl.DataFrame:
         FROM delays
         GROUP BY line
         ORDER BY avg_delay DESC
-    """).arrow()
-    df = pl.from_arrow(result)
-    assert isinstance(df, pl.DataFrame)
-    return df
+    """)
+    return _arrow_to_df(cursor)
 
 
 def peak_rankings(
     store: DelayStore, line: str, period: str, n: int = 10
 ) -> pl.DataFrame:
     """Worst N stations for a specific period and line."""
-    result = store.conn.execute(
+    cursor = store.conn.execute(
         """
         SELECT
             station_name,
@@ -44,7 +52,5 @@ def peak_rankings(
         LIMIT ?
     """,
         [line, period, n],
-    ).arrow()
-    df = pl.from_arrow(result)
-    assert isinstance(df, pl.DataFrame)
-    return df
+    )
+    return _arrow_to_df(cursor)

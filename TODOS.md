@@ -10,3 +10,14 @@
 **Context:** Dashboard is primarily a desktop portfolio piece. Deferred from design review 2026-05-20.
 **Files:** `dashboard/app.py` — all `_render_*` functions with inline `width:` styles.
 **Verify:** Open Railway URL on mobile, check no horizontal scroll or clipped dropdowns.
+
+## Deployment
+
+### P1: Add Railway live URL to README
+**What:** After deploying, replace `_(deploy to Railway and add URL)_` in README with the actual URL.
+**Files:** `README.md` line 5.
+
+### P1: Screenshot gallery in README
+**What:** Embed screenshots of all 7 tabs after deployment.
+**Why:** DE hiring managers scan READMEs; screenshots prove the dashboard works.
+**Files:** `README.md` — add after Architecture section.

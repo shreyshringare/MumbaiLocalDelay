@@ -2,11 +2,13 @@
 
 > End-to-end data pipeline: GTFS ingestion → Polars transform → DuckDB analytics → Prophet anomaly detection → Plotly Dash dashboard
 
-**Live demo:** [link-to-railway-app] ← add after Phase 7
+**Live demo:** _(deploy to Railway and add URL)_
 
 ---
 
-## What this shows
+## What this demonstrates
+
+Built for **data engineering hiring managers**. Signals: pipeline reliability, schema design, DuckDB analytical store, Polars transforms, data quality monitoring.
 
 Mumbai local trains carry **7.5 million passengers daily**. This project answers:
 - Which stations are worst at which hours?
@@ -20,8 +22,6 @@ Mumbai local trains carry **7.5 million passengers daily**. This project answers
 ```
 GTFS Static + Simulator → Polars Transform → DuckDB → Prophet → Plotly Dash
 ```
-
-*(Full architecture diagram — Phase 7)*
 
 ---
 
@@ -63,4 +63,4 @@ uv run python -m dashboard.app              # start dashboard
 | Dashboard load | <2 sec |
 | Worst station | Dadar CR — avg 8.3 min |
 | Best line | Harbour — avg 2.1 min |
-| Peak delay window | Monday 8–9 AM |
+| Peak delay window | Derived live from DuckDB |

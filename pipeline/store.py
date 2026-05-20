@@ -177,5 +177,23 @@ class DelayStore:
         assert isinstance(df, pl.DataFrame)
         return df
 
+    def peak_window(self) -> str:
+        """Return highest-delay weekday+hour as 'Weekday H-H+1 AM/PM'."""
+        _DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        result = self.conn.execute("""
+            SELECT weekday, hour, AVG(avg_delay) AS avg_delay
+            FROM delays
+            GROUP BY weekday, hour
+            ORDER BY avg_delay DESC
+            LIMIT 1
+        """).fetchone()
+        if result is None:
+            return "N/A"
+        wd, hr = int(result[0]), int(result[1])
+        day = _DAYS[wd] if 0 <= wd < 7 else "Unknown"
+        am_pm = "AM" if hr < 12 else "PM"
+        display_hr = hr if hr <= 12 else hr - 12
+        return f"{day} {display_hr}-{display_hr + 1} {am_pm}"
+
     def close(self) -> None:
         self.conn.close()

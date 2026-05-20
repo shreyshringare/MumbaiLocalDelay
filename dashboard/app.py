@@ -9,12 +9,13 @@
   6. Data Quality   — Pipeline health, freshness, missing data
   7. Business Insights — Plain-English callouts with economic impact
 """
+import functools
 import logging
 import os
 from pathlib import Path
 
 import polars as pl
-from dash import Dash, Input, Output, dcc, html
+from dash import Dash, Input, Output, dcc, html, no_update
 from dotenv import load_dotenv
 
 from dashboard.charts import (
@@ -34,7 +35,11 @@ logger = logging.getLogger(__name__)
 _DB_PATH = os.getenv("DUCKDB_PATH", "delays.duckdb")
 _RAW_DIR = Path(os.getenv("DATA_RAW_DIR", "data/raw"))
 
-store = DelayStore(_DB_PATH)
+store: DelayStore | None = None
+try:
+    store = DelayStore(_DB_PATH)
+except Exception:
+    logger.exception("DelayStore init failed — dashboard running without database")
 
 _stops: pl.DataFrame | None = None
 _stops_path = _RAW_DIR / "stops.parquet"
@@ -52,6 +57,7 @@ app = Dash(
     title="Mumbai Local Delay Visualizer",
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
 )
+app.config.suppress_callback_exceptions = True
 
 _DARK = "#1a1a2e"
 _LINES = ["Central", "Western", "Harbour"]
@@ -232,7 +238,10 @@ def update_rankings(line: str, period: str):  # type: ignore[return]
         return err, err
 
 
+@functools.lru_cache(maxsize=1)
 def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
+    if store is None:
+        return [_text("Anomaly detection unavailable — database not initialized.", color="#888")]
     try:
         from analysis.anomaly import AnomalyBatch
 
@@ -269,8 +278,9 @@ def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
                 _text(f"Excess: +{c['excess_pct']:.0f}% above expected", color="#E9C46A"),
             ], style={"borderTop": f"4px solid {color}"}))
         return cards
-    except Exception as e:
-        return [_text(f"Anomaly detection error: {e}", color="red")]
+    except Exception:
+        logger.exception("Anomaly detection failed")
+        return [_text("Anomaly detection unavailable.", color="#888")]
 
 
 def _render_anomaly_tab() -> html.Div:
@@ -280,9 +290,16 @@ def _render_anomaly_tab() -> html.Div:
             id="anomaly-loading",
             type="circle",
             color="#E63946",
-            children=html.Div(id="anomaly-content", children=_build_anomaly_cards()),
+            children=html.Div(id="anomaly-content"),
         ),
     ])
+
+
+@app.callback(Output("anomaly-content", "children"), Input("tabs", "value"))
+def load_anomaly_content(tab: str):  # type: ignore[return]
+    if tab != "tab-anomaly":
+        return no_update
+    return _build_anomaly_cards()
 
 
 _line_colors = {"Central": "#E63946", "Western": "#457B9D", "Harbour": "#2A9D8F"}

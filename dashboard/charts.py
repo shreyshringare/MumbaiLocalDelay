@@ -39,10 +39,14 @@ def _dark_layout(**kwargs: Any) -> dict:  # type: ignore[type-arg]
 def make_heatmap(df: pl.DataFrame, station: str) -> go.Figure:
     """Station delay heatmap: hour (x) x weekday (y) -> avg_delay (color)."""
     day_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    z = []
-    for wd in range(7):
-        row_data = df.filter(pl.col("weekday") == wd).sort("hour")
-        z.append(row_data["avg_delay"].to_list())
+    # Build a guaranteed 7×24 zero matrix then fill from available data.
+    # Without this, stations with < 7 weekdays of data produce ragged rows
+    # that Plotly renders as a broken heatmap.
+    z: list[list[float]] = [[0.0] * 24 for _ in range(7)]
+    for row in df.iter_rows(named=True):
+        wd, hr = int(row["weekday"]), int(row["hour"])
+        if 0 <= wd < 7 and 0 <= hr < 24:
+            z[wd][hr] = float(row["avg_delay"])
 
     fig = go.Figure(go.Heatmap(
         z=z,
@@ -163,14 +167,21 @@ def make_business_insights(store: Any) -> dict[str, Any]:
     except Exception:
         best_line, best_line_delay = "N/A", 0.0
 
+    # Constants: 15 trains/hr (Mumbai suburban headway) × 3,000 commuters/train
+    # (avg loading) × 8 peak hours/day ÷ 60 converts delay-minutes to hours.
     delay_minutes_per_day = worst_delay * 15 * 3000 * 8 / 60
+
+    try:
+        peak_window = store.peak_window()
+    except Exception:
+        peak_window = "N/A"
 
     return {
         "worst_station": worst_station,
         "worst_station_delay": round(worst_delay, 1),
         "best_line": best_line,
         "best_line_delay": round(best_line_delay, 1),
-        "peak_window": "Monday 8-9 AM",
+        "peak_window": peak_window,
         "delay_hours_per_day": round(delay_minutes_per_day, 0),
         "commuters_affected": "7.5M daily",
     }
