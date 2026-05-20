@@ -181,7 +181,7 @@ class DelayStore:
 
     def daily_avg(self, station: str) -> pl.DataFrame:
         """Daily avg delay for a station (all hours aggregated). Used by forecasting."""
-        result_df = self.conn.execute(
+        reader = self.conn.execute(
             """
             SELECT
                 date,
@@ -192,9 +192,11 @@ class DelayStore:
             ORDER BY date
             """,
             [station],
-        ).pl()
-        assert isinstance(result_df, pl.DataFrame)
-        return result_df
+        ).arrow()
+        result = reader.read_all()
+        df = pl.from_arrow(result)
+        assert isinstance(df, pl.DataFrame)
+        return df
 
     def peak_window(self) -> str:
         """Return highest-delay weekday+hour as 'Weekday H-H+1 AM/PM'."""
