@@ -192,6 +192,7 @@ def render_tab(tab: str) -> html.Div:
 def _render_map_tab() -> html.Div:
     map_html = "<p style='color:#888'>Station data not available.</p>"
     if _stops is not None:
+        historical_delays = None
         try:
             historical_delays = pl.from_arrow(store.conn.execute("""
                 SELECT station_name,
@@ -202,10 +203,13 @@ def _render_map_tab() -> html.Div:
                 FROM delays
                 GROUP BY station_name
             """).arrow())
+        except Exception:
+            logger.warning("Map: delay query failed — rendering stations without delay color")
+        try:
             map_html = make_station_map(_stops, historical_delays)
         except Exception:
             logger.exception("Map render failed")
-            map_html = "<p style='color:#E9C46A'>Map unavailable — no delay data loaded.</p>"
+            map_html = "<p style='color:#E9C46A'>Map render error — check logs.</p>"
 
     return html.Div([
         _card([
