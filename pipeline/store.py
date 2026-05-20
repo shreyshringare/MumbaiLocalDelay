@@ -181,7 +181,7 @@ class DelayStore:
 
     def daily_avg(self, station: str) -> pl.DataFrame:
         """Daily avg delay for a station (all hours aggregated). Used by forecasting."""
-        reader = self.conn.execute(
+        df = self.conn.execute(
             """
             SELECT
                 date,
@@ -192,9 +192,7 @@ class DelayStore:
             ORDER BY date
             """,
             [station],
-        ).arrow()
-        result = reader.read_all()
-        df = pl.from_arrow(result)
+        ).pl()
         assert isinstance(df, pl.DataFrame)
         return df
 
