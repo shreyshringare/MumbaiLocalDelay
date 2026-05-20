@@ -1,0 +1,6 @@
+stop_id,stop_name,stop_lat,stop_lon,location_type
+S001,CSTM,18.9401,72.8353,0
+S002,Dadar (CR),19.0178,72.8478,0
+S003,DADAR,19.0220,72.8347,0
+S004,Kurla,19.0654,72.8792,0
+S005,Thane,19.1896,72.9703,0

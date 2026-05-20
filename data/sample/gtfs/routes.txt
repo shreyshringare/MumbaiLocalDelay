@@ -1,0 +1,4 @@
+route_id,route_short_name,route_long_name,route_type
+R001,CR,Central Railway Main Line,2
+R002,WR,Western Railway Main Line,2
+R003,HR,Harbour Line,2
