@@ -103,6 +103,27 @@ Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
 | Data Quality | Pipeline freshness, row counts, unique dates per station |
 | Business Insights | Plain-English callouts + economic impact estimate |
 
+### Live Map
+![Live Map](docs/screenshots/tab_live_map.png)
+
+### Heatmap — station × hour delay matrix
+![Heatmap](docs/screenshots/tab_heatmap.png)
+
+### Rankings — worst/best stations with 95% CI bars
+![Rankings](docs/screenshots/tab_rankings.png)
+
+### Anomaly Alerts — Prophet-detected spikes
+![Anomaly Alerts](docs/screenshots/tab_anomaly.png)
+
+### Line Comparison — 30-day trend
+![Line Comparison](docs/screenshots/tab_line_comparison.png)
+
+### Data Quality — pipeline health
+![Data Quality](docs/screenshots/tab_data_quality.png)
+
+### Business Insights — economic impact
+![Business Insights](docs/screenshots/tab_business_insights.png)
+
 ---
 
 ## Architecture
