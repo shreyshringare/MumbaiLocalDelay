@@ -152,7 +152,7 @@ GTFS Static Data
 | Analytics store | DuckDB | Columnar, SQL-native, zero-infrastructure |
 | Anomaly detection | Prophet (Meta) | Handles seasonality without tuning |
 | Dashboard | Plotly Dash + Folium | Python-native, no JS required |
-| Deploy | Railway.app | One-command deploy from repo |
+| Deploy | Render | Zero-config deploy from repo |
 
 ---
 
