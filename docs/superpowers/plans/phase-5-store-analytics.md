@@ -249,7 +249,7 @@ class DelayStore:
                 AVG(on_time_pct) AS on_time_pct
             FROM delays
             WHERE line = ?
-            AND date >= (SELECT MAX(date) FROM delays) - INTERVAL (?) DAY
+            AND date >= (SELECT MAX(date) FROM delays) - (? * INTERVAL '1 day')
             GROUP BY date
             ORDER BY date DESC
             LIMIT ?

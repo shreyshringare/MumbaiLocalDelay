@@ -201,7 +201,6 @@ def make_heatmap(df: pl.DataFrame, station: str) -> go.Figure:
         station: station name for title
     """
     day_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    pivot = df.pivot(index="weekday", on="hour", values="avg_delay")
 
     z = []
     for wd in range(7):

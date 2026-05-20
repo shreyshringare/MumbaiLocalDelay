@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Parse the real Mumbai suburban railway GTFS static feed to extract 120+ stations, 3 lines (Central/Western/Harbour), and schedule data — saved as Parquet for downstream use.
+**Goal:** Build a hardcoded, authoritative station database of 120+ Mumbai suburban stations across 3 lines — saved as Parquet for downstream use. No public GTFS feed exists for Mumbai suburban railway; we use a curated station list from official railway sources instead.
 
-**Architecture:** `httpx` fetches the GTFS zip asynchronously. A pure-Python parser extracts `stops.txt`, `routes.txt`, and `stop_times.txt` into Polars DataFrames. A canonical station name lookup normalizes "DADAR", "Dadar (CR)", "Dadar" → "Dadar". Output saved to `data/raw/` as Parquet.
+**Architecture:** `pipeline/ingest/stations.py` contains the complete hardcoded station list (name, lat/lon, line) sourced from Indian Railways timetables and Wikipedia. Written directly to `data/raw/stops.parquet`. The GTFS parser module (`gtfs.py`) is retained for future use if a feed becomes available, but Phase 2 execution uses the station registry.
 
 **Tech Stack:** Python 3.12, httpx, Polars, pyarrow, python-dotenv
 
