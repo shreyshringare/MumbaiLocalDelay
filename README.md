@@ -143,7 +143,7 @@ The Rankings tab surfaces the worst stations; Query 10 in `sql_showcase.sql` con
 
 ---
 
-## Dashboard (7 tabs)
+## Dashboard (9 tabs)
 
 Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
 
@@ -156,6 +156,8 @@ Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
 | Line Comparison | Central vs Western vs Harbour — 30-day trend |
 | Data Quality | Pipeline freshness, row counts, unique dates per station |
 | Business Insights | Plain-English callouts + economic impact estimate |
+| Prediction | Prophet 7-day forecast per station with 95% CI band |
+| Correlation | Station co-delay Pearson r heatmap — top 15 per line |
 
 ### Live Map
 ![Live Map](docs/screenshots/tab_live_map.png)
@@ -219,33 +221,47 @@ GTFS Static Data
 ## Project Structure
 
 ```
-pipeline/
-├── ingest/         # GTFS fetch, real data loader, delay simulator
-├── transform/      # Polars clean + feature engineering
-└── store.py        # DelayStore — 9 typed DuckDB query methods
-
-analysis/
-├── sql_queries.py  # 6 SQL interview patterns (window fns, CTEs, percentiles)
-├── rankings.py     # line_summary(), peak_rankings()
-└── anomaly.py      # Prophet-based AnomalyBatch detector
-
-dashboard/
-├── app.py          # 7-tab Dash app, async callbacks
-├── charts.py       # Plotly figure factories (pure functions)
-└── map.py          # Folium station map
-
-tests/              # 39 tests — store, charts, anomaly, rankings
+MumbaiLocal/
+│
+├── pipeline/                      # Data ingestion + storage layer
+│   ├── ingest/
+│   │   ├── gtfs.py                # GTFS schedule fetch + parse (120 stations)
+│   │   ├── loader.py              # Real data loader (etrain CSV → DuckDB)
+│   │   └── simulator.py          # Delay simulator: personality, DoW curve, incidents
+│   ├── transform/                 # Polars feature engineering (weekday, period, CI)
+│   └── store.py                   # DelayStore — 9 typed DuckDB query methods
+│
+├── analysis/                      # Analytics layer (all pure functions)
+│   ├── sql_queries.py             # 10 SQL patterns: window fns, CTEs, CORR(), LAG, YoY
+│   ├── anomaly.py                 # Prophet AnomalyBatch — 95% CI severity detection
+│   ├── forecasting.py             # ForecastCache — Prophet 7-day per-station, background thread
+│   ├── correlation.py             # Pearson r co-delay matrix via DuckDB CORR() self-join
+│   ├── delays.py                  # station_delay_matrix() — hour × weekday aggregation
+│   └── rankings.py                # line_summary(), peak_rankings()
+│
+├── dashboard/                     # Plotly Dash app (9 tabs)
+│   ├── app.py                     # Main app — layout, callbacks, tab routing
+│   ├── charts.py                  # Plotly figure factories (pure functions, no side effects)
+│   └── map.py                     # Folium station map, delay-coloured markers
+│
+├── notebooks/
+│   └── eda_mumbai_delays.ipynb   # Hypothesis-driven EDA: monsoon, cascade, peak signature
+│
+├── tests/                         # 131 tests — TDD throughout
+│   ├── test_store.py              # DelayStore query methods
+│   ├── test_charts.py             # Chart factories (shape, traces, no crash)
+│   ├── test_anomaly.py            # Prophet anomaly detector
+│   ├── test_rankings.py           # Rankings + line summary
+│   ├── test_forecasting.py        # ForecastCache + daily_avg()
+│   └── test_correlation.py        # station_correlation() Pearson matrix
+│
+├── scripts/
+│   └── seed_db.py                 # One-shot DB seeder (used on Render cold start)
+│
+└── docs/
+    ├── screenshots/               # Tab screenshots for README gallery
+    └── superpowers/               # Design specs + implementation plans
 ```
-
----
-
-## Ongoing Development
-
-Active additions post-v1:
-
-| Feature | Description | Status |
-|---|---|---|
-| **EDA Notebook** | Jupyter walkthrough: hypothesis → SQL query → business finding | Planned |
 
 ---
 
@@ -266,8 +282,8 @@ uv run python -m dashboard.app              # start dashboard at localhost:8050
 |---|---|
 | Stations covered | 120+ |
 | Historical data | 2 years simulated |
-| Anomaly precision | 87% |
-| Dashboard tabs | 7 |
-| Test coverage | 39 passing tests |
+| Anomaly precision | ~87% recall on held-out incident days |
+| Dashboard tabs | 9 |
+| Test coverage | 131 passing tests |
 | Worst station | Dadar CR — avg 8.3 min |
 | Best line | Harbour — avg 2.1 min |
