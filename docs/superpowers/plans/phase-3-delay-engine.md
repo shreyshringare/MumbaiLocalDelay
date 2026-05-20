@@ -197,11 +197,14 @@ Generates realistic delay data based on known Mumbai patterns:
 
 All values are clearly simulated — disclosed in README.
 """
+import os
 import random
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+from pathlib import Path
 
 import polars as pl
+from dotenv import load_dotenv
 
 
 @dataclass
@@ -277,7 +280,7 @@ class DelaySimulator:
         Returns one row per (date, station, hour) with avg_delay, std_delay,
         sample_count, and derived columns (weekday, period).
         """
-        rows: list[dict] = []
+        rows: list[dict[str, object]] = []
         p = self._params
         current = start_date
 
@@ -338,11 +341,6 @@ class DelaySimulator:
 
 
 if __name__ == "__main__":
-    import os
-    from pathlib import Path
-    from datetime import date
-    from dotenv import load_dotenv
-
     load_dotenv()
     raw_dir = Path(os.getenv("DATA_RAW_DIR", "data/raw"))
     stops = pl.read_parquet(raw_dir / "stops.parquet")
@@ -395,6 +393,7 @@ git commit -m "feat(ingest): add statistical delay simulator with Mumbai paramet
 Falls back silently if the source is unavailable. Never blocks
 the main pipeline — simulation is the primary data source.
 """
+import io
 import logging
 from pathlib import Path
 
@@ -434,7 +433,6 @@ def try_fetch_historical(output_dir: Path) -> bool:
             try:
                 r = httpx.get(url, timeout=30.0, follow_redirects=True)
                 r.raise_for_status()
-                import io
                 df = pl.read_csv(io.BytesIO(r.content), infer_schema_length=1000)
                 frames.append(df)
                 logger.info(f"Fetched {url}: {len(df)} rows")
@@ -539,9 +537,17 @@ git commit -m "feat(ingest): add APScheduler daily refresh job"
 
 ### Task 6: End-to-end smoke test — generate 2-year history
 
-Requires Phase 2 to have run (stops.parquet must exist in data/raw/).
+Requires Phase 2's station registry to be materialised to disk.
 
-- [ ] **Step 1: Run full simulator**
+- [ ] **Step 1: Generate stops.parquet (Phase 2 registry → disk)**
+
+```bash
+uv run python -m pipeline.ingest.stations
+```
+
+Expected: `Wrote 120 stations to data/raw/stops.parquet`
+
+- [ ] **Step 2: Run full simulator**
 
 ```bash
 uv run python -m pipeline.ingest.simulator
@@ -553,7 +559,7 @@ Generating 2 years of delay data...
 Generated NNN,NNN rows → data/raw/delays_raw.parquet
 ```
 
-- [ ] **Step 2: Verify output size**
+- [ ] **Step 3: Verify output size**
 
 ```bash
 uv run python -c "
@@ -566,4 +572,4 @@ print(df.head(3))
 "
 ```
 
-Expected: 2+ million rows, 120+ unique stations.
+Expected: 2+ million rows, 120 unique stations.
