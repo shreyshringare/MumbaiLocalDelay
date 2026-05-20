@@ -187,4 +187,6 @@ def write_stops_parquet(output_dir: Path | None = None) -> pl.DataFrame:
 if __name__ == "__main__":
     df = write_stops_parquet()
     print(f"Wrote {len(df)} stations to data/raw/stops.parquet")
-    print(df.group_by("line").agg(pl.len().alias("count")).sort("line"))
+    counts = df.group_by("line").agg(pl.len().alias("count")).sort("line")
+    for row in counts.iter_rows(named=True):
+        print(f"  {row['line']}: {row['count']} stations")

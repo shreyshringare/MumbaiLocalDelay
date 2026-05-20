@@ -12,6 +12,8 @@ data/raw/
 data/processed/
 *.duckdb
 *.parquet
+# Keep sample test fixtures in git
+!data/sample/*.parquet
 
 # Environment
 .env
@@ -24,3 +26,4 @@ data/processed/
 # OS
 .DS_Store
 Thumbs.db
+.gstack/
