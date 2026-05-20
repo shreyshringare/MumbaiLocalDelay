@@ -96,7 +96,7 @@ class TestDelayAnomalyDetector:
         normal = pl.DataFrame({
             "date": [date(2023, 3, 15)],
             "station_name": ["Dadar"],
-            "avg_delay": [5.2],
+            "avg_delay": [5.0],  # same as baseline — clearly not anomalous
         })
         result = detector.detect(normal)
         assert not result.is_anomaly
@@ -115,7 +115,7 @@ class TestDelayAnomalyDetector:
         detector = DelayAnomalyDetector(station="Dadar")
         empty = pl.DataFrame(schema={
             "date": pl.Date,
-            "station_name": pl.Utf8,
+            "station_name": pl.String,
             "avg_delay": pl.Float64,
         })
         with pytest.raises(ValueError, match="history is empty"):
@@ -170,7 +170,7 @@ class TestAnomalyBatch:
 - [ ] **Step 2: Run to verify failure**
 
 ```bash
-uv run pytest tests/test_anomaly.py -v
+uv run python -m pytest tests/test_anomaly.py -v
 ```
 
 Expected: `ImportError` — module doesn't exist yet.
@@ -226,7 +226,7 @@ class AnomalyResult:
 def _classify_severity(actual: float, expected: float, upper: float) -> str:
     if actual <= upper:
         return "NORMAL"
-    if actual > 2 * upper:
+    if upper <= 0 or actual > 2 * upper:
         return "HIGH"
     return "MEDIUM"
 
@@ -241,7 +241,7 @@ class DelayAnomalyDetector:
 
     def __init__(self, station: str) -> None:
         self.station = station
-        self._model = None
+        self._model: "Prophet | None" = None  # TYPE_CHECKING guard not needed — string annotation
         self.fitted = False
 
     def fit(self, history: pl.DataFrame) -> None:
@@ -375,7 +375,7 @@ class AnomalyBatch:
                 result = detector.detect(today)
                 results.append(result)
             except Exception as e:
-                logger.warning(f"Anomaly detection failed for {station}: {e}")
+                logger.warning("Anomaly detection failed for %s: %s", station, e)
                 continue
 
         return sorted(results, key=lambda r: r.actual_delay, reverse=True)
@@ -404,7 +404,7 @@ class AnomalyBatch:
 Note: Prophet tests are slow (model fitting). First run: ~60 seconds.
 
 ```bash
-uv run pytest tests/test_anomaly.py -v --timeout=120
+uv run python -m pytest tests/test_anomaly.py -v
 ```
 
 Expected: all PASSED. If `test_normal_delay_not_anomaly` fails intermittently, it's a Prophet CI width issue — the 95% interval may be too narrow for 400 days. Increase `n_days=400` to `n_days=730` in `_make_history`.
