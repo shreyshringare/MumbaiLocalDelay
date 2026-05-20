@@ -179,6 +179,23 @@ class DelayStore:
         assert isinstance(df, pl.DataFrame)
         return df
 
+    def daily_avg(self, station: str) -> pl.DataFrame:
+        """Daily avg delay for a station (all hours aggregated). Used by forecasting."""
+        result_df = self.conn.execute(
+            """
+            SELECT
+                date,
+                AVG(avg_delay) AS avg_delay
+            FROM delays
+            WHERE station_name = ?
+            GROUP BY date
+            ORDER BY date
+            """,
+            [station],
+        ).pl()
+        assert isinstance(result_df, pl.DataFrame)
+        return result_df
+
     def peak_window(self) -> str:
         """Return highest-delay weekday+hour as 'Weekday H-H+1 AM/PM'."""
         _DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
