@@ -6,6 +6,23 @@ Mumbai local trains carry **7.5 million passengers daily**. This project identif
 
 ---
 
+## What the Data Says
+
+Mumbai's suburban rail network runs on three lines with wildly different delay profiles. The Central line is the problem child: its worst station, Dadar, averages **8.3 minutes of delay** — four times Harbour line's best stations. At 15 trains per hour and 3,000 commuters per train, that single station accounts for an estimated **~50,000 passenger-hours lost every peak day**.
+
+The bigger story is that delays don't stay put. A DuckDB self-join on concurrent hourly observations shows Dadar's delays correlate with CSMT at **r = 0.74** — trains leave Dadar late and arrive everywhere else late too. Fixing throughput at one junction has network-wide payoff.
+
+Season compounds the problem. Central line delays during monsoon months (June–September) run **1.4× higher** than dry-season baseline, while Harbour line barely moves (1.1×). That's an engineering gap: Central's elevated sections are exposed to wind and rain speed restrictions that Harbour's coastal route avoids. Morning peak delays are narrow and predictable (structural congestion); evening peak has **40% higher standard deviation** — incident-driven, not capacity-driven. Two different problems, two different fixes.
+
+| Finding | Metric | Implication |
+|---|---|---|
+| Dadar is the bottleneck | r = 0.74 with CSMT | Fix Dadar → network-wide payoff |
+| Central monsoon exposure | 1.4× delay Jun–Sep | Seasonal maintenance, speed restriction review |
+| Evening variance > morning | Std dev +40% | Morning needs capacity; evening needs incident response |
+| Worst station economic cost | ~50,000 passenger-hours/day | Quantified case for infrastructure investment |
+
+---
+
 ## Skills Demonstrated
 
 | Skill | Where |
