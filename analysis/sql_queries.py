@@ -207,3 +207,111 @@ def top_n_per_group(store: DelayStore, n: int = 3) -> pl.DataFrame:
     df = pl.from_arrow(result)
     assert isinstance(df, pl.DataFrame)
     return df
+
+
+def yoy_delay_change(store: DelayStore) -> pl.DataFrame:
+    """CONDITIONAL AGGREGATION: year-over-year delay change per station.
+
+    SQL concept: conditional aggregation by year + percent difference
+    Interview analog: "Compare this year's revenue vs last year by product"
+    """
+    result = store.conn.execute("""
+        SELECT
+            station_name,
+            line,
+            AVG(CASE WHEN YEAR(date) = 2023 THEN avg_delay END) AS avg_2023,
+            AVG(CASE WHEN YEAR(date) = 2024 THEN avg_delay END) AS avg_2024,
+            ROUND(
+                (
+                    AVG(CASE WHEN YEAR(date) = 2024 THEN avg_delay END)
+                  - AVG(CASE WHEN YEAR(date) = 2023 THEN avg_delay END)
+                ) / NULLIF(AVG(CASE WHEN YEAR(date) = 2023 THEN avg_delay END), 0) * 100,
+                2
+            ) AS yoy_pct_change
+        FROM delays
+        GROUP BY station_name, line
+        HAVING avg_2023 IS NOT NULL AND avg_2024 IS NOT NULL
+        ORDER BY yoy_pct_change DESC
+    """).arrow()
+    df = pl.from_arrow(result)
+    assert isinstance(df, pl.DataFrame)
+    return df
+
+
+def monsoon_vs_dry_pivot(store: DelayStore) -> pl.DataFrame:
+    """CONDITIONAL AGGREGATION: monsoon (Jun-Sep) vs dry season delay pivot.
+
+    SQL concept: CASE WHEN MONTH() pivot — seasonal comparison in one query
+    Interview analog: "Compare Q1 vs Q3 performance by region"
+    """
+    result = store.conn.execute("""
+        SELECT
+            station_name,
+            line,
+            AVG(CASE WHEN MONTH(date) IN (6, 7, 8, 9) THEN avg_delay END) AS monsoon_avg,
+            AVG(CASE WHEN MONTH(date) NOT IN (6, 7, 8, 9) THEN avg_delay END) AS dry_avg,
+            ROUND(
+                AVG(CASE WHEN MONTH(date) IN (6, 7, 8, 9) THEN avg_delay END)
+              / NULLIF(AVG(CASE WHEN MONTH(date) NOT IN (6, 7, 8, 9) THEN avg_delay END), 0),
+                3
+            ) AS monsoon_ratio
+        FROM delays
+        GROUP BY station_name, line
+        HAVING monsoon_avg IS NOT NULL AND dry_avg IS NOT NULL
+        ORDER BY monsoon_ratio DESC
+    """).arrow()
+    df = pl.from_arrow(result)
+    assert isinstance(df, pl.DataFrame)
+    return df
+
+
+def rolling_deviation(store: DelayStore, line: str) -> pl.DataFrame:
+    """NESTED WINDOW FUNCTIONS: rolling 7-day avg vs 30-day baseline deviation.
+
+    SQL concept: ratio of short-window to long-window rolling average
+    Deviation > 1.2 signals a worsening trend worth investigating.
+    Interview analog: "Flag products whose 7-day sales deviate >20% from 30-day baseline"
+    """
+    result = store.conn.execute(
+        """
+        WITH daily AS (
+            SELECT
+                date,
+                station_name,
+                AVG(avg_delay) AS daily_avg
+            FROM delays
+            WHERE line = ?
+            GROUP BY date, station_name
+        ),
+        windowed AS (
+            SELECT
+                date,
+                station_name,
+                daily_avg,
+                AVG(daily_avg) OVER (
+                    PARTITION BY station_name
+                    ORDER BY date
+                    ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+                ) AS rolling_7d_avg,
+                AVG(daily_avg) OVER (
+                    PARTITION BY station_name
+                    ORDER BY date
+                    ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+                ) AS baseline_30d_avg
+            FROM daily
+        )
+        SELECT
+            date,
+            station_name,
+            ROUND(rolling_7d_avg, 3)   AS rolling_7d_avg,
+            ROUND(baseline_30d_avg, 3) AS baseline_30d_avg,
+            ROUND(rolling_7d_avg / NULLIF(baseline_30d_avg, 0), 3) AS deviation_ratio
+        FROM windowed
+        WHERE baseline_30d_avg IS NOT NULL
+        ORDER BY date DESC, deviation_ratio DESC
+    """,
+        [line],
+    ).arrow()
+    df = pl.from_arrow(result)
+    assert isinstance(df, pl.DataFrame)
+    return df
