@@ -401,7 +401,7 @@ def _render_insights_tab() -> html.Div:
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("DASH_PORT", "8050"))
+    port = int(os.getenv("PORT", "8050"))
     debug = os.getenv("DASH_DEBUG", "false").lower() == "true"
     logger.info("Starting dashboard on port %s", port)
     app.run(host="0.0.0.0", port=port, debug=debug)
