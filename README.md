@@ -12,9 +12,11 @@ Mumbai local trains carry **7.5 million passengers daily**. This project identif
 |---|---|
 | **SQL** — window functions, CTEs, LAG, PERCENTILE_CONT, conditional aggregation | `analysis/sql_queries.py` |
 | **Data pipeline** — GTFS ingestion, Polars transforms, DuckDB analytical store | `pipeline/` |
-| **Python** — typed classes, parameterized queries, pure chart factories, 39 tests | `pipeline/store.py`, `dashboard/charts.py`, `tests/` |
-| **Data visualization** — 7-tab interactive dashboard, heatmaps, trend lines, CI bars | `dashboard/` |
+| **Python** — typed classes, parameterized queries, pure chart factories, 131 tests | `pipeline/store.py`, `dashboard/charts.py`, `tests/` |
+| **Data visualization** — 9-tab interactive dashboard, heatmaps, trend lines, CI bars, Prophet forecast, Pearson correlation | `dashboard/` |
 | **Anomaly detection** — Prophet time series, 95% confidence bounds, severity classification | `analysis/anomaly.py` |
+| **Forecasting** — Prophet 7-day delay forecast per station, 95% CI bands, background pre-compute | `analysis/forecasting.py`, Prediction tab |
+| **Correlation analysis** — Pearson r co-delay matrix via DuckDB CORR() self-join, top-15 per line | `analysis/correlation.py`, Correlation tab |
 | **Data quality** — freshness monitoring, row counts, graceful empty states | `pipeline/store.py`, dashboard Data Quality tab |
 | **Business translation** — delay → passenger-hours lost → economic impact estimate | `dashboard/charts.py`, Business Insights tab |
 
@@ -220,8 +222,6 @@ Active additions post-v1:
 
 | Feature | Description | Status |
 |---|---|---|
-| **Prediction tab** | Prophet 7-day delay forecast per station with 95% CI bands | In progress |
-| **Correlation tab** | Station co-delay heatmap — does a Dadar spike cascade to Kurla? | Planned |
 | **EDA Notebook** | Jupyter walkthrough: hypothesis → SQL query → business finding | Planned |
 
 ---
