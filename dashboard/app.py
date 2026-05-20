@@ -319,20 +319,22 @@ if store is not None:
 def _render_anomaly_tab() -> html.Div:
     return html.Div([
         _card([_text("Prophet anomaly detection — stations where today's delay exceeds the 95% confidence bound.", color="#888")]),
-        dcc.Loading(
-            id="anomaly-loading",
-            type="circle",
-            color="#E63946",
-            children=html.Div(id="anomaly-content"),
-        ),
+        dcc.Interval(id="anomaly-poll", interval=10_000, n_intervals=0),
+        html.Div(id="anomaly-content"),
     ])
 
 
-@app.callback(Output("anomaly-content", "children"), Input("tabs", "value"))
-def load_anomaly_content(tab: str):  # type: ignore[return]
+@app.callback(
+    Output("anomaly-content", "children"),
+    Input("anomaly-poll", "n_intervals"),
+    Input("tabs", "value"),
+)
+def load_anomaly_content(n_intervals: int, tab: str):  # type: ignore[return]
     if tab != "tab-anomaly":
         return no_update
-    return _build_anomaly_cards()
+    if _anomaly_cache is not None:
+        return _anomaly_cache
+    return [_text("Computing anomaly detection model… check back in ~60 seconds.", color="#888")]
 
 
 _line_colors = {"Central": "#E63946", "Western": "#457B9D", "Harbour": "#2A9D8F"}
