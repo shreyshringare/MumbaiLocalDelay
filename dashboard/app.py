@@ -150,7 +150,7 @@ app.layout = html.Div(
             style={"backgroundColor": "#16213e"},
             colors={"border": "#1a1a2e", "primary": "#E63946", "background": "#16213e"},
             children=[
-                dcc.Tab(label="Live Map", value="tab-map"),
+                dcc.Tab(label="Station Map", value="tab-map"),
                 dcc.Tab(label="Heatmap", value="tab-heatmap"),
                 dcc.Tab(label="Rankings", value="tab-rankings"),
                 dcc.Tab(label="Anomaly Alerts", value="tab-anomaly"),
@@ -193,22 +193,28 @@ def _render_map_tab() -> html.Div:
     map_html = "<p style='color:#888'>Station data not available.</p>"
     if _stops is not None:
         try:
-            today_delays = pl.from_arrow(store.conn.execute("""
-                SELECT station_name, AVG(avg_delay) AS avg_delay
+            historical_delays = pl.from_arrow(store.conn.execute("""
+                SELECT station_name,
+                       AVG(avg_delay)   AS avg_delay,
+                       MIN(avg_delay)   AS min_delay,
+                       MAX(avg_delay)   AS max_delay,
+                       COUNT(DISTINCT date) AS days_observed
                 FROM delays
-                WHERE date = (SELECT MAX(date) FROM delays)
                 GROUP BY station_name
             """).arrow())
-            map_html = make_station_map(_stops, today_delays)
+            map_html = make_station_map(_stops, historical_delays)
         except Exception:
             logger.exception("Map render failed")
             map_html = "<p style='color:#E9C46A'>Map unavailable — no delay data loaded.</p>"
 
     return html.Div([
-        _card([html.Iframe(
-            srcDoc=map_html,
-            style={"width": "100%", "height": "600px", "border": "none"},
-        )]),
+        _card([
+            _text("All-time average delay per station across full 2-year history. Click a marker for details.", color="#888"),
+            html.Iframe(
+                srcDoc=map_html,
+                style={"width": "100%", "height": "580px", "border": "none"},
+            ),
+        ]),
     ])
 
 
