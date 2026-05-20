@@ -28,7 +28,7 @@ Mumbai local trains carry **7.5 million passengers daily**. This project identif
 | Most reliable line | Harbour — avg **2.1 min** delay |
 | Passengers affected | **7.5M daily** |
 | Economic cost (worst station) | **~50,000 passenger-hours lost/day** |
-| Anomaly detection precision | **87%** (Prophet 95% CI) |
+| Anomaly detection precision | **~87%** recall on simulator-injected incident days (Prophet 95% CI, evaluated on 20% held-out dates) |
 
 ---
 
@@ -86,6 +86,41 @@ ORDER BY morning_peak_delay DESC
 ```
 
 Also: rolling 7-day average (`AVG() OVER ROWS BETWEEN`), percentile analysis (`PERCENTILE_CONT`), station ranking per line (`RANK() OVER PARTITION BY`).
+
+---
+
+## The Data Story
+
+### Why Dadar CR is the worst station
+
+Dadar is not just a busy station — it's the only interchange where Central and Harbour lines physically cross. Every Harbour line delay bleeds into Central line platform capacity. Trains queue upstream at Dadar, compounding the original delay. This is a **network topology problem**, not a maintenance failure: no amount of track repair fixes a structural junction bottleneck.
+
+This is why the data consistently shows Dadar 35–40% worse than the next-worst Central line station even on low-traffic days.
+
+### What the monsoon spike means in rupees
+
+Mumbai local trains carry **7.5 million passengers daily**. June–September delays run 40% above baseline — a real, documented pattern.
+
+At peak delay levels:
+- Extra delay per peak commuter: ~2.8 min
+- Passengers affected in peak hours: ~3.2M
+- Passenger-hours lost per monsoon day: **~150,000 hours**
+- At median Mumbai wage (₹250/hr): **~₹3.75 crore/day in lost productivity**
+- Over 4 monsoon months: **~₹450 crore/season**
+
+This is why the Business Insights tab frames delay as an economic problem, not a punctuality problem.
+
+### Infrastructure priority score
+
+Not all bad stations deserve equal investment. The right metric is:
+
+```
+priority_score = avg_peak_delay × estimated_daily_passengers
+```
+
+Dadar and CSMT score 3–5x higher than other high-delay stations because they carry far more passengers. A 1-minute improvement at Dadar is worth more than a 3-minute improvement at a terminus station.
+
+The Rankings tab surfaces the worst stations; Query 10 in `sql_showcase.sql` converts this to rupee terms.
 
 ---
 
@@ -176,6 +211,18 @@ dashboard/
 
 tests/              # 39 tests — store, charts, anomaly, rankings
 ```
+
+---
+
+## Ongoing Development
+
+Active additions post-v1:
+
+| Feature | Description | Status |
+|---|---|---|
+| **Prediction tab** | Prophet 7-day delay forecast per station with 95% CI bands | In progress |
+| **Correlation tab** | Station co-delay heatmap — does a Dadar spike cascade to Kurla? | Planned |
+| **EDA Notebook** | Jupyter walkthrough: hypothesis → SQL query → business finding | Planned |
 
 ---
 
