@@ -11,9 +11,7 @@ build/
 data/raw/
 data/processed/
 *.duckdb
-*.parquet
-# Keep sample test fixtures in git
-!data/sample/*.parquet
+# Keep stops.parquet in git (4KB, needed for deploy)
 
 # Environment
 .env
