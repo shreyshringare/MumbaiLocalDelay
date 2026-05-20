@@ -5,6 +5,7 @@ No side effects. Easy to test.
 """
 from typing import Any
 
+import pandas as pd
 import plotly.graph_objects as go
 import polars as pl
 
@@ -124,6 +125,65 @@ def make_line_trend(df: pl.DataFrame, line_name: str) -> go.Figure:
         xaxis_title="Date",
         yaxis={"title": "Avg Delay (min)"},
         yaxis2={"title": "On-Time %", "overlaying": "y", "side": "right"},
+        legend={"bgcolor": "rgba(0,0,0,0)"},
+        **_dark_layout(),
+    )
+    return fig
+
+
+def make_forecast_chart(station: str, history_df: "pd.DataFrame", forecast_df: "pd.DataFrame") -> go.Figure:
+    """7-day Prophet forecast with 95% CI band overlaid on last 30 days actual.
+
+    Args:
+        station: station name for chart title
+        history_df: pandas DataFrame with columns [ds, y] — last 30 days actual
+        forecast_df: pandas DataFrame with columns [ds, yhat, yhat_lower, yhat_upper] — 7 days ahead
+    """
+    fig = go.Figure()
+
+    # Last 30 days actual
+    fig.add_trace(go.Scatter(
+        x=history_df["ds"],
+        y=history_df["y"],
+        name="Actual (30d)",
+        line={"color": "#457B9D", "width": 2},
+        hovertemplate="%{x|%Y-%m-%d}<br>Actual: %{y:.1f} min<extra></extra>",
+    ))
+
+    # CI lower bound — invisible, used as fill base
+    fig.add_trace(go.Scatter(
+        x=forecast_df["ds"],
+        y=forecast_df["yhat_lower"],
+        name="CI Lower",
+        line={"color": "rgba(230,57,70,0)"},
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+
+    # CI upper bound — fills down to CI lower
+    fig.add_trace(go.Scatter(
+        x=forecast_df["ds"],
+        y=forecast_df["yhat_upper"],
+        name="95% CI",
+        fill="tonexty",
+        fillcolor="rgba(230,57,70,0.15)",
+        line={"color": "rgba(230,57,70,0)"},
+        hoverinfo="skip",
+    ))
+
+    # Forecast line
+    fig.add_trace(go.Scatter(
+        x=forecast_df["ds"],
+        y=forecast_df["yhat"],
+        name="Forecast (7d)",
+        line={"color": "#E63946", "width": 2, "dash": "dash"},
+        hovertemplate="%{x|%Y-%m-%d}<br>Forecast: %{y:.1f} min<extra></extra>",
+    ))
+
+    fig.update_layout(
+        title=f"7-Day Delay Forecast — {station}",
+        xaxis_title="Date",
+        yaxis_title="Avg Delay (min)",
         legend={"bgcolor": "rgba(0,0,0,0)"},
         **_dark_layout(),
     )

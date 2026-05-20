@@ -1,6 +1,7 @@
 """Tests for dashboard chart factory functions."""
-from datetime import date
+from datetime import date, timedelta
 
+import pandas as pd
 import polars as pl
 import plotly.graph_objects as go
 import pytest
@@ -95,3 +96,38 @@ class TestMakeBusinessInsights:
         assert isinstance(insights, dict)
         assert "worst_station" in insights
         assert "best_line" in insights
+
+
+class TestMakeForecastChart:
+    @pytest.fixture
+    def history_df(self) -> "pd.DataFrame":
+        base = date(2024, 1, 1)
+        return pd.DataFrame({
+            "ds": pd.to_datetime([base + timedelta(days=i) for i in range(30)]),
+            "y": [5.0 + i * 0.05 for i in range(30)],
+        })
+
+    @pytest.fixture
+    def forecast_df(self) -> "pd.DataFrame":
+        base = date(2024, 1, 31)
+        return pd.DataFrame({
+            "ds": pd.to_datetime([base + timedelta(days=i) for i in range(1, 8)]),
+            "yhat": [5.5 + i * 0.1 for i in range(7)],
+            "yhat_lower": [4.5 + i * 0.1 for i in range(7)],
+            "yhat_upper": [6.5 + i * 0.1 for i in range(7)],
+        })
+
+    def test_returns_figure(self, history_df: "pd.DataFrame", forecast_df: "pd.DataFrame") -> None:
+        from dashboard.charts import make_forecast_chart
+        fig = make_forecast_chart("Dadar", history_df, forecast_df)
+        assert isinstance(fig, go.Figure)
+
+    def test_has_four_traces(self, history_df: "pd.DataFrame", forecast_df: "pd.DataFrame") -> None:
+        from dashboard.charts import make_forecast_chart
+        fig = make_forecast_chart("Dadar", history_df, forecast_df)
+        assert len(fig.data) == 4
+
+    def test_title_contains_station(self, history_df: "pd.DataFrame", forecast_df: "pd.DataFrame") -> None:
+        from dashboard.charts import make_forecast_chart
+        fig = make_forecast_chart("Dadar", history_df, forecast_df)
+        assert "Dadar" in fig.layout.title.text
