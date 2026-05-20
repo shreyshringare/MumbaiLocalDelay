@@ -204,8 +204,6 @@ Three-stage validation:
 3. Station normalization — canonical names via lookup table
 4. Gap detection — flag missing 2-hour windows (not interpolated)
 """
-from datetime import date
-
 import polars as pl
 
 # Required columns in raw delay DataFrame
@@ -282,12 +280,12 @@ def detect_gaps(df: pl.DataFrame) -> pl.DataFrame:
     Missing data is surfaced in the Data Quality dashboard tab.
     """
     if len(df) == 0:
-        return pl.DataFrame(schema={"date": pl.Date, "station_name": pl.Utf8,
+        return pl.DataFrame(schema={"date": pl.Date, "station_name": pl.String,
                                     "missing_hours": pl.List(pl.Int32)})
 
     # Build expected: every (date, station) should have 24 hours
     all_hours = set(range(24))
-    gaps: list[dict] = []
+    gaps: list[dict[str, object]] = []
 
     grouped = df.group_by(["date", "station_name"]).agg(
         pl.col("hour").alias("present_hours")
@@ -304,7 +302,7 @@ def detect_gaps(df: pl.DataFrame) -> pl.DataFrame:
             })
 
     if not gaps:
-        return pl.DataFrame(schema={"date": pl.Date, "station_name": pl.Utf8,
+        return pl.DataFrame(schema={"date": pl.Date, "station_name": pl.String,
                                     "missing_hours": pl.List(pl.Int32)})
     return pl.DataFrame(gaps)
 
