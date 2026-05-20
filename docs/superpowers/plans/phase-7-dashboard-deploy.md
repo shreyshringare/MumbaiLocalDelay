@@ -1109,3 +1109,17 @@ Open the Railway URL. Check:
 - [ ] Page loads in < 2 seconds
 
 **Project complete.** Share the live URL in your resume and LinkedIn.
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR | 0 issues, 0 critical gaps |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAR (fixes applied) | score: 6/10 → 8/10, 5 decisions |
+| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | N/A (data dashboard — no API/SDK surface) | — |
+
+**DESIGN:** 5 issues fixed — stops.parquet fallback (D3), raw exceptions → friendly messages (D4), borderLeft → borderTop (D5), dcc.Loading on anomaly tab (D6), DESIGN.md created (D7). Mobile responsive deferred to TODOS.md (P3).
+
+**VERDICT:** DESIGN + ENG CLEARED — ready to ship.

@@ -38,10 +38,14 @@ store = DelayStore(_DB_PATH)
 
 _stops: pl.DataFrame | None = None
 _stops_path = _RAW_DIR / "stops.parquet"
+_stops_sample_path = Path("data/sample/stops.parquet")
 if _stops_path.exists():
     _stops = pl.read_parquet(_stops_path)
+elif _stops_sample_path.exists():
+    _stops = pl.read_parquet(_stops_sample_path)
+    logger.info("Using sample stops data from %s", _stops_sample_path)
 else:
-    logger.warning("stops.parquet not found at %s", _stops_path)
+    logger.warning("stops.parquet not found at %s (also checked %s)", _stops_path, _stops_sample_path)
 
 app = Dash(
     __name__,
@@ -120,7 +124,7 @@ def render_tab(tab: str) -> html.Div:
 
 
 def _render_map_tab() -> html.Div:
-    map_html = "<p style='color:#888'>stops.parquet not found. Run Phase 2 first.</p>"
+    map_html = "<p style='color:#888'>Station data not available.</p>"
     if _stops is not None:
         try:
             today_delays = pl.from_arrow(store.conn.execute("""
@@ -130,8 +134,9 @@ def _render_map_tab() -> html.Div:
                 GROUP BY station_name
             """).arrow())
             map_html = make_station_map(_stops, today_delays)
-        except Exception as e:
-            map_html = f"<p style='color:red'>Map error: {e}</p>"
+        except Exception:
+            logger.exception("Map render failed")
+            map_html = "<p style='color:#E9C46A'>Map unavailable — no delay data loaded.</p>"
 
     return html.Div([
         _card([html.Iframe(
@@ -174,8 +179,9 @@ def update_heatmap(station: str | None):  # type: ignore[return]
     try:
         df = store.heatmap(station)
         return make_heatmap(df, station=station)
-    except Exception as e:
-        return {"layout": {"title": f"Error: {e}"}}
+    except Exception:
+        logger.exception("Heatmap render failed for station %s", station)
+        return {"layout": {"title": "No data available for this station"}}
 
 
 def _render_rankings_tab() -> html.Div:
@@ -220,8 +226,9 @@ def update_rankings(line: str, period: str):  # type: ignore[return]
         )
         fig_best = make_rankings_bar(best, f"Best 10 — {line}")
         return fig_worst, fig_best
-    except Exception as e:
-        err = {"layout": {"title": f"Error: {e}"}}
+    except Exception:
+        logger.exception("Rankings render failed for line %s period %s", line, period)
+        err = {"layout": {"title": "Rankings unavailable — no data loaded"}}
         return err, err
 
 
@@ -260,7 +267,7 @@ def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
                 _text(f"Actual delay: {c['actual_delay']:.1f} min"),
                 _text(f"Expected: {c['expected_delay']:.1f} min (95% upper: {c['upper_bound']:.1f} min)"),
                 _text(f"Excess: +{c['excess_pct']:.0f}% above expected", color="#E9C46A"),
-            ], style={"borderLeft": f"4px solid {color}"}))
+            ], style={"borderTop": f"4px solid {color}"}))
         return cards
     except Exception as e:
         return [_text(f"Anomaly detection error: {e}", color="red")]
@@ -269,7 +276,12 @@ def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
 def _render_anomaly_tab() -> html.Div:
     return html.Div([
         _card([_text("Prophet anomaly detection — stations where today's delay exceeds the 95% confidence bound.", color="#888")]),
-        html.Div(id="anomaly-content", children=_build_anomaly_cards()),
+        dcc.Loading(
+            id="anomaly-loading",
+            type="circle",
+            color="#E63946",
+            children=html.Div(id="anomaly-content", children=_build_anomaly_cards()),
+        ),
     ])
 
 
@@ -289,15 +301,17 @@ def _render_lines_tab() -> html.Div:
                         "plot_bgcolor": "#16213e", "font": {"color": "#eaeaea"}},
         }
         figs.append(dcc.Graph(figure=fig_ontime))
-    except Exception as e:
-        figs.append(_text(f"Summary error: {e}", color="red"))
+    except Exception:
+        logger.exception("Line summary render failed")
+        figs.append(_text("Line summary unavailable.", color="#888"))
 
     for line in _LINES:
         try:
             trend = store.line_trend(line, days=30)
             figs.append(dcc.Graph(figure=make_line_trend(trend, line)))
-        except Exception as e:
-            figs.append(_text(f"{line} trend error: {e}", color="red"))
+        except Exception:
+            logger.exception("Trend render failed for line %s", line)
+            figs.append(_text(f"{line} line trend unavailable.", color="#888"))
 
     return html.Div([_card(figs)])
 
@@ -335,8 +349,9 @@ def _render_quality_tab() -> html.Div:
                 html.Tbody(table_rows),
             ], style={"width": "100%", "borderCollapse": "collapse"})]),
         ])
-    except Exception as e:
-        return _card([_text(f"Quality report error: {e}", color="red")])
+    except Exception:
+        logger.exception("Data quality report failed")
+        return _card([_text("Data quality report unavailable.", color="#888")])
 
 
 def _render_insights_tab() -> html.Div:
@@ -363,8 +378,9 @@ def _render_insights_tab() -> html.Div:
                 _text("3. Alert frequent commuters 30 min before predicted anomalies"),
             ]),
         ])
-    except Exception as e:
-        return _card([_text(f"Insights error: {e}", color="red")])
+    except Exception:
+        logger.exception("Business insights render failed")
+        return _card([_text("Business insights unavailable.", color="#888")])
 
 
 if __name__ == "__main__":
