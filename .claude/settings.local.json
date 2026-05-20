@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv --version)",
+      "Bash(uv init:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run:*)",
+      "Skill(browse)",
+      "WebSearch",
+      "Bash(uv pip:*)",
+      "Bash(python -c \"import csv; r=list\\(csv.DictReader\\(open\\('D:/DA Projects/MumbaiLocal/data/raw/real/etrain_delays.csv'\\)\\)\\); print\\(len\\(r\\), 'rows'\\); codes=set\\(x['station_code'] for x in r\\); print\\('Sample codes:', list\\(codes\\)[:20]\\)\")",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "Bash(uv add:*)",
+      "Skill(plan-devex-review)",
+      "Skill(plan-eng-review)",
+      "Bash(python -m pytest tests/test_rankings.py -v)",
+      "Bash(cat railway.json)",
+      "Bash(cat Procfile)",
+      "Bash(ls data/sample/)",
+      "Skill(context-save)",
+      "Bash(ls *.duckdb)",
+      "Bash(python -c \"import pipeline.ingest.simulator; help\\(pipeline.ingest.simulator\\)\")",
+      "Bash(python -c ':*)"
+    ]
+  }
+}

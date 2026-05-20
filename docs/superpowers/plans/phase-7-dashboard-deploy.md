@@ -1110,16 +1110,53 @@ Open the Railway URL. Check:
 
 **Project complete.** Share the live URL in your resume and LinkedIn.
 
+## Implementation Tasks
+Synthesized from eng-review findings. Each task derives from a specific finding above.
+
+- [ ] **T1 (P1, human: ~30min / CC: ~5min)** — `dashboard/app.py` — Wire async Dash callback for Anomaly Alerts tab
+  - Surfaced by: Architecture D1 — dcc.Loading vestigial, Prophet blocks UI thread
+  - Files: `dashboard/app.py`
+  - Verify: Click Anomaly Alerts; spinner shows immediately; tab loads asynchronously
+
+- [ ] **T2 (P2, human: ~5min / CC: ~1min)** — `dashboard/app.py` — Fix missed D4 error leak in `_build_anomaly_cards()`
+  - Surfaced by: Architecture D2 — `f"Anomaly detection error: {e}"` still in error handler at line 273
+  - Files: `dashboard/app.py:273`
+  - Verify: No raw Python exception text shown to user on anomaly failure
+
+- [ ] **T3 (P2, human: ~15min / CC: ~3min)** — `dashboard/charts.py` — Derive `peak_window` from DuckDB instead of hardcoding
+  - Surfaced by: Code Quality D3 — `"Monday 8-9 AM"` hardcoded, never derived from data
+  - Files: `dashboard/charts.py` + optionally `pipeline/store.py` (new method)
+  - Verify: `make_business_insights()` queries `delays` table for MAX(avg_delay) by weekday+hour
+
+- [ ] **T4 (P2, human: ~20min / CC: ~5min)** — `dashboard/charts.py` — Pad heatmap z-matrix to 7×24
+  - Surfaced by: Code Quality D4 — inconsistent row lengths on sparse data cause broken Plotly heatmap
+  - Files: `dashboard/charts.py:make_heatmap()`
+  - Verify: `make_heatmap()` with data missing for 2 weekdays still returns a valid Figure
+
+- [ ] **T5 (P2, human: ~20min / CC: ~5min)** — `tests/` — Add `test_rankings.py` for `analysis/rankings.py`
+  - Surfaced by: Tests D5 — `line_summary()` and `peak_rankings()` have zero tests
+  - Files: `tests/test_rankings.py` (new)
+  - Verify: pytest passes; `line_summary` returns `on_time_pct` column; `peak_rankings` filters by period
+
+- [ ] **T6 (P1, human: ~15min / CC: ~3min)** — `dashboard/app.py` — Add `lru_cache` on anomaly results + store init guard
+  - Surfaced by: Performance D6 (Prophet cache) + Architecture D7 (store init crash)
+  - Files: `dashboard/app.py`
+  - Verify: Second anomaly tab visit returns instantly; bad DB path → server starts, all tabs show friendly error
+
 ## GSTACK REVIEW REPORT
 
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR | 0 issues, 0 critical gaps |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | CLEAR | 7 issues, 0 critical gaps |
 | Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAR (fixes applied) | score: 6/10 → 8/10, 5 decisions |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | N/A (data dashboard — no API/SDK surface) | — |
 
 **DESIGN:** 5 issues fixed — stops.parquet fallback (D3), raw exceptions → friendly messages (D4), borderLeft → borderTop (D5), dcc.Loading on anomaly tab (D6), DESIGN.md created (D7). Mobile responsive deferred to TODOS.md (P3).
 
-**VERDICT:** DESIGN + ENG CLEARED — ready to ship.
+**ENG:** 7 decisions, all resolved — async anomaly callback (D1), error leak fix (D2), hardcoded peak_window (D3), heatmap sparse z-matrix (D4), rankings.py zero tests (D5), Prophet lru_cache (D6), store init guard (D7). 6 implementation tasks generated. Outside voice ran (Claude subagent) — confirmed all 6 original findings; surfaced 1 additional (D7 store init). SQL injection claim refuted (parameterized queries).
+
+**UNRESOLVED:** 0
+
+**VERDICT:** ENG + DESIGN CLEARED — implement T1–T6 then ship.
