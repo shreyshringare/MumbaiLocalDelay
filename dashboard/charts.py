@@ -190,6 +190,26 @@ def make_forecast_chart(station: str, history_df: "pd.DataFrame", forecast_df: "
     return fig
 
 
+def make_correlation_heatmap(stations: list[str], matrix: list[list[float]]) -> go.Figure:
+    """Pearson r heatmap for station co-delay correlations."""
+    fig = go.Figure(go.Heatmap(
+        z=matrix,
+        x=stations,
+        y=stations,
+        colorscale="RdBu",
+        zmin=-1,
+        zmax=1,
+        colorbar={"title": "Pearson r", "tickfont": {"color": _TEXT}},
+        hovertemplate="%{y} vs %{x}<br>r = %{z:.2f}<extra></extra>",
+    ))
+    fig.update_layout(
+        title="Station Co-Delay Correlation",
+        xaxis={"tickangle": -45},
+        **_dark_layout(margin={"l": 160, "r": 20, "t": 60, "b": 160}),
+    )
+    return fig
+
+
 def make_anomaly_cards_data(results: list[AnomalyResult]) -> list[dict[str, Any]]:
     """Convert anomaly results to card data dicts. Returns only anomalous stations."""
     severity_order = {"HIGH": 0, "MEDIUM": 1, "NORMAL": 2}

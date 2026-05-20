@@ -1,6 +1,6 @@
 """Main Plotly Dash application — Mumbai Local Train Delay Visualizer.
 
-7 tabs:
+9 tabs:
   1. Live Map       — Folium station map, color-coded by delay severity
   2. Heatmap        — Station x hour delay matrix
   3. Rankings       — Worst/best stations per line per period
@@ -8,6 +8,8 @@
   5. Line Comparison — Central vs Western vs Harbour 30-day trend
   6. Data Quality   — Pipeline health, freshness, missing data
   7. Business Insights — Plain-English callouts with economic impact
+  8. Prediction     — Prophet 7-day forecast per station with CI band
+  9. Correlation    — Station co-delay Pearson heatmap per line
 """
 import functools
 import logging
@@ -19,9 +21,13 @@ import polars as pl
 from dash import Dash, Input, Output, dcc, html, no_update
 from dotenv import load_dotenv
 
+from analysis.correlation import station_correlation
+from analysis.forecasting import ForecastCache
 from dashboard.charts import (
     make_anomaly_cards_data,
     make_business_insights,
+    make_correlation_heatmap,
+    make_forecast_chart,
     make_heatmap,
     make_line_trend,
     make_rankings_bar,
@@ -124,6 +130,8 @@ app.layout = html.Div(
                 dcc.Tab(label="Line Comparison", value="tab-lines"),
                 dcc.Tab(label="Data Quality", value="tab-quality"),
                 dcc.Tab(label="Business Insights", value="tab-insights"),
+                dcc.Tab(label="Prediction", value="tab-prediction"),
+                dcc.Tab(label="Correlation", value="tab-correlation"),
             ],
         ),
         html.Div(id="tab-content", style={"padding": "16px"}),
@@ -147,6 +155,10 @@ def render_tab(tab: str) -> html.Div:
         return _render_quality_tab()
     if tab == "tab-insights":
         return _render_insights_tab()
+    if tab == "tab-prediction":
+        return _render_prediction_tab()
+    if tab == "tab-correlation":
+        return _render_correlation_tab()
     return html.Div("Unknown tab")
 
 
@@ -315,6 +327,20 @@ def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
 if store is not None:
     threading.Thread(target=_build_anomaly_cards, daemon=True).start()
 
+_forecast_cache = ForecastCache()
+_all_stations: list[str] = []
+if store is not None:
+    try:
+        _all_stations = [
+            row[0]
+            for row in store.conn.execute(
+                "SELECT DISTINCT station_name FROM delays ORDER BY station_name"
+            ).fetchall()
+        ]
+    except Exception:
+        logger.warning("Could not load station list for forecast dropdown")
+    threading.Thread(target=_forecast_cache.build, args=(store,), daemon=True).start()
+
 
 def _render_anomaly_tab() -> html.Div:
     return html.Div([
@@ -433,6 +459,84 @@ def _render_insights_tab() -> html.Div:
     except Exception:
         logger.exception("Business insights render failed")
         return _card([_text("Business insights unavailable.", color="#888")])
+
+
+def _render_prediction_tab() -> html.Div:
+    initial_station = _all_stations[0] if _all_stations else None
+    return html.Div([
+        _card([
+            _text(
+                "Prophet 7-day delay forecast with 95% confidence interval. "
+                "Select a station. Forecasts pre-computed at startup (~2 min warmup).",
+                color="#888",
+            ),
+            dcc.Dropdown(
+                id="pred-station-dropdown",
+                options=[{"label": s, "value": s} for s in _all_stations],
+                value=initial_station,
+                style={"backgroundColor": "#16213e", "color": "#eaeaea", "width": "300px"},
+            ),
+        ]),
+        dcc.Interval(id="pred-poll", interval=10_000, n_intervals=0),
+        html.Div(id="pred-content"),
+    ])
+
+
+@app.callback(
+    Output("pred-content", "children"),
+    Input("pred-poll", "n_intervals"),
+    Input("pred-station-dropdown", "value"),
+)
+def render_prediction(n_intervals: int, station: str | None) -> html.Div:
+    if station is None:
+        return html.Div([_text("No stations available.", color="#888")])
+    result = _forecast_cache.get(station)
+    if result is None:
+        return html.Div([_card([_text(f"Computing forecast for {station}…", color="#888")])])
+    history_df, forecast_df = result
+    try:
+        fig = make_forecast_chart(station, history_df, forecast_df)
+        return html.Div([_card([dcc.Graph(figure=fig)])])
+    except Exception:
+        logger.exception("Forecast chart failed for %s", station)
+        return html.Div([_text("Forecast unavailable.", color="#888")])
+
+
+def _render_correlation_tab() -> html.Div:
+    return html.Div([
+        _card([
+            _text(
+                "Pearson r co-delay correlation for top 15 stations on a line. "
+                "Red = positive correlation (delays move together). Blue = negative.",
+                color="#888",
+            ),
+            dcc.Dropdown(
+                id="corr-line-dropdown",
+                options=[{"label": ln, "value": ln} for ln in _LINES],
+                value="Central",
+                style={"backgroundColor": "#16213e", "color": "#eaeaea", "width": "200px"},
+            ),
+        ]),
+        html.Div(id="corr-content"),
+    ])
+
+
+@app.callback(
+    Output("corr-content", "children"),
+    Input("corr-line-dropdown", "value"),
+)
+def render_correlation(line: str) -> html.Div:
+    if store is None:
+        return html.Div([_text("Store unavailable.", color="#888")])
+    try:
+        stations, matrix = station_correlation(store, line=line, n=15)
+        if not stations:
+            return html.Div([_text(f"No data for {line} line.", color="#888")])
+        fig = make_correlation_heatmap(stations, matrix)
+        return html.Div([_card([dcc.Graph(figure=fig)])])
+    except Exception:
+        logger.exception("Correlation chart failed for %s", line)
+        return html.Div([_text("Correlation unavailable.", color="#888")])
 
 
 if __name__ == "__main__":
