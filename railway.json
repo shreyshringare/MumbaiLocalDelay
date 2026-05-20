@@ -1,12 +1,13 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "uv sync && uv run python scripts/seed_db.py"
   },
   "deploy": {
     "startCommand": "uv run python -m dashboard.app",
     "healthcheckPath": "/",
-    "healthcheckTimeout": 30,
+    "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE"
   }
 }
