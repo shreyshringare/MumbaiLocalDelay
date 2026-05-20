@@ -65,7 +65,7 @@ def make_heatmap(df: pl.DataFrame, station: str) -> go.Figure:
     return fig
 
 
-def make_rankings_bar(df: pl.DataFrame, title: str) -> go.Figure:
+def make_rankings_bar(df: pl.DataFrame, title: str, color: str = "#E63946") -> go.Figure:
     """Horizontal bar chart of station rankings with 95% CI error bars."""
     sorted_df = df.sort("mean_delay", descending=True)
     stations = sorted_df["station_name"].to_list()
@@ -79,7 +79,7 @@ def make_rankings_bar(df: pl.DataFrame, title: str) -> go.Figure:
         x=delays,
         y=stations,
         orientation="h",
-        marker_color="#E63946",
+        marker_color=color,
         error_x={
             "type": "data",
             "symmetric": False,

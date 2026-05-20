@@ -32,7 +32,7 @@ def make_station_map(
     m = folium.Map(
         location=_MUMBAI_CENTER,
         zoom_start=11,
-        tiles="CartoDB dark_matter",
+        tiles="CartoDB positron",
     )
 
     delay_map: dict[str, float] = {}
@@ -56,11 +56,12 @@ def make_station_map(
 
         folium.CircleMarker(
             location=[lat, lon],
-            radius=6,
-            color=_LINE_COLORS.get(line, "#888"),
+            radius=8,
+            color="#333",
+            weight=1,
             fill=True,
             fill_color=color,
-            fill_opacity=0.8,
+            fill_opacity=0.9,
             popup=folium.Popup(popup_html, max_width=200),
             tooltip=f"{station}: {avg_delay:.1f} min",
         ).add_to(m)

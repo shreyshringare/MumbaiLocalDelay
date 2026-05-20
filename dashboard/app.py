@@ -12,6 +12,7 @@
 import functools
 import logging
 import os
+import threading
 from pathlib import Path
 
 import polars as pl
@@ -250,7 +251,7 @@ def update_rankings(line: str, period: str):  # type: ignore[return]
             worst.rename({"avg_delay": "mean_delay", "ci_lower": "mean_ci_lower", "ci_upper": "mean_ci_upper"}),
             f"Worst 10 — {line} — {period.replace('_', ' ').title()}"
         )
-        fig_best = make_rankings_bar(best, f"Best 10 — {line}")
+        fig_best = make_rankings_bar(best, f"Best 10 — {line}", color="#2A9D8F")
         return fig_worst, fig_best
     except Exception:
         logger.exception("Rankings render failed for line %s period %s", line, period)
@@ -258,8 +259,13 @@ def update_rankings(line: str, period: str):  # type: ignore[return]
         return err, err
 
 
-@functools.lru_cache(maxsize=1)
+_anomaly_cache: list | None = None  # type: ignore[type-arg]
+
+
 def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
+    global _anomaly_cache
+    if _anomaly_cache is not None:
+        return _anomaly_cache
     if store is None:
         return [_text("Anomaly detection unavailable — database not initialized.", color="#888")]
     try:
@@ -285,7 +291,9 @@ def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
         cards_data = make_anomaly_cards_data(results)
 
         if not cards_data:
-            return [_card([_text("No anomalies detected today.", color="#2A9D8F")])]
+            result = [_card([_text("No anomalies detected today.", color="#2A9D8F")])]
+            _anomaly_cache = result
+            return result
 
         cards = []
         for c in cards_data:
@@ -297,10 +305,15 @@ def _build_anomaly_cards() -> list:  # type: ignore[type-arg]
                 _text(f"Expected: {c['expected_delay']:.1f} min (95% upper: {c['upper_bound']:.1f} min)"),
                 _text(f"Excess: +{c['excess_pct']:.0f}% above expected", color="#E9C46A"),
             ], style={"borderTop": f"4px solid {color}"}))
+        _anomaly_cache = cards
         return cards
     except Exception:
         logger.exception("Anomaly detection failed")
         return [_text("Anomaly detection unavailable.", color="#888")]
+
+
+if store is not None:
+    threading.Thread(target=_build_anomaly_cards, daemon=True).start()
 
 
 def _render_anomaly_tab() -> html.Div:
