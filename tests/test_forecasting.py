@@ -59,3 +59,78 @@ class TestDailyAvg:
         store = _make_store(n_days=60)
         df = store.daily_avg("NonExistent")
         assert len(df) == 0
+
+
+class TestForecastCache:
+    def test_get_returns_none_before_build(self) -> None:
+        from analysis.forecasting import ForecastCache
+        cache = ForecastCache()
+        assert cache.get("Dadar") is None
+
+    def test_stations_empty_before_build(self) -> None:
+        from analysis.forecasting import ForecastCache
+        cache = ForecastCache()
+        assert cache.stations() == []
+
+    def test_ready_false_before_build(self) -> None:
+        from analysis.forecasting import ForecastCache
+        cache = ForecastCache()
+        assert cache.ready is False
+
+    @pytest.mark.timeout(120)
+    def test_build_populates_cache(self) -> None:
+        from analysis.forecasting import ForecastCache
+        store = _make_store(n_days=60)
+        cache = ForecastCache()
+        cache.build(store)
+        assert cache.ready is True
+        result = cache.get("Dadar")
+        assert result is not None
+
+    @pytest.mark.timeout(120)
+    def test_build_returns_tuple_of_dataframes(self) -> None:
+        import pandas as pd
+        from analysis.forecasting import ForecastCache
+        store = _make_store(n_days=60)
+        cache = ForecastCache()
+        cache.build(store)
+        history_df, forecast_df = cache.get("Dadar")  # type: ignore[misc]
+        assert isinstance(history_df, pd.DataFrame)
+        assert isinstance(forecast_df, pd.DataFrame)
+
+    @pytest.mark.timeout(120)
+    def test_forecast_has_7_rows(self) -> None:
+        from analysis.forecasting import ForecastCache
+        store = _make_store(n_days=60)
+        cache = ForecastCache()
+        cache.build(store)
+        _, forecast_df = cache.get("Dadar")  # type: ignore[misc]
+        assert len(forecast_df) == 7
+
+    @pytest.mark.timeout(120)
+    def test_forecast_columns(self) -> None:
+        from analysis.forecasting import ForecastCache
+        store = _make_store(n_days=60)
+        cache = ForecastCache()
+        cache.build(store)
+        _, forecast_df = cache.get("Dadar")  # type: ignore[misc]
+        assert "ds" in forecast_df.columns
+        assert "yhat" in forecast_df.columns
+        assert "yhat_lower" in forecast_df.columns
+        assert "yhat_upper" in forecast_df.columns
+
+    @pytest.mark.timeout(120)
+    def test_station_with_too_few_rows_skipped(self) -> None:
+        from analysis.forecasting import ForecastCache
+        store = _make_store(n_days=10)  # < 30 days threshold
+        cache = ForecastCache()
+        cache.build(store)
+        assert cache.get("Dadar") is None
+
+    @pytest.mark.timeout(120)
+    def test_stations_after_build(self) -> None:
+        from analysis.forecasting import ForecastCache
+        store = _make_store(n_days=60)
+        cache = ForecastCache()
+        cache.build(store)
+        assert "Dadar" in cache.stations()
