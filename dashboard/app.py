@@ -35,6 +35,26 @@ logger = logging.getLogger(__name__)
 _DB_PATH = os.getenv("DUCKDB_PATH", "delays.duckdb")
 _RAW_DIR = Path(os.getenv("DATA_RAW_DIR", "data/raw"))
 
+
+def _ensure_db() -> None:
+    """Regenerate DuckDB if missing — handles Render ephemeral disk restarts."""
+    if Path(_DB_PATH).exists():
+        return
+    logger.warning("delays.duckdb not found — regenerating (takes ~2 min)...")
+    try:
+        import subprocess
+        import sys
+        subprocess.run(
+            [sys.executable, "scripts/seed_db.py"],
+            check=True,
+        )
+        logger.info("Database regenerated successfully.")
+    except Exception:
+        logger.exception("Database regeneration failed — dashboard running without data")
+
+
+_ensure_db()
+
 store: DelayStore | None = None
 try:
     store = DelayStore(_DB_PATH)
