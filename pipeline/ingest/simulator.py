@@ -10,6 +10,7 @@ Generates realistic delay data based on known Mumbai patterns:
 All values are clearly simulated — disclosed in README.
 """
 
+import hashlib
 import os
 import random
 from dataclasses import dataclass, field
@@ -49,6 +50,15 @@ class MumbaiDelayParams:
     # Trains per hour per station (determines sample_count)
     trains_per_hour: int = 15
 
+    # Gap probability: fraction of station-days skipped (simulates missing data)
+    gap_probability: float = 0.04
+
+    # Day-of-week multipliers (Mon=0 … Sun=6)
+    dow_factors: tuple[float, ...] = (1.15, 1.05, 1.00, 1.02, 1.10, 0.80, 0.65)
+
+    # Number of incident events injected per line per month
+    incident_rate: int = 2
+
 
 def _get_period(hour: int) -> str:
     if 7 <= hour < 12:
@@ -64,6 +74,43 @@ def _line_factor(line: str, params: MumbaiDelayParams) -> float:
         "Western": params.western_factor,
         "Harbour": params.harbour_factor,
     }.get(line, params.western_factor)
+
+
+def _station_personality(station_name: str) -> float:
+    """Deterministic per-station delay multiplier in [0.85, 1.25].
+
+    Uses MD5 hash of station name — stable across Python versions and runs.
+    """
+    digest = int(hashlib.md5(station_name.encode()).hexdigest(), 16)
+    return 0.85 + (digest % 1000) / 1000 * 0.40
+
+
+def _get_incident_stations(
+    year: int, month: int, line: str, stations: list[str], rate: int
+) -> dict[tuple[str, "date"], float]:
+    """Return dict of (station, date) -> multiplier for incident days.
+
+    Seeded by (year, month, line) for reproducibility.
+    """
+    import calendar as _calendar
+    rng = random.Random(f"{year}-{month}-{line}")
+    _, days_in_month = _calendar.monthrange(year, month)
+    incidents: dict[tuple[str, "date"], float] = {}
+    if not stations:
+        return incidents
+    for _ in range(rate):
+        station = rng.choice(stations)
+        start_day = rng.randint(1, max(1, days_in_month - 2))
+        multiplier = rng.uniform(2.5, 3.2)
+        for offset in range(3):
+            try:
+                from datetime import date as _date
+                d = _date(year, month, start_day + offset)
+                if d.month == month:
+                    incidents[(station, d)] = multiplier
+            except ValueError:
+                pass
+    return incidents
 
 
 def _is_monsoon(month: int, params: MumbaiDelayParams) -> bool:
@@ -92,15 +139,37 @@ class DelaySimulator:
         p = self._params
         current = start_date
 
+        # Build line -> stations mapping for incident injection
+        station_list = self._stops["station_name"].to_list()
+        lines_list = self._stops["line"].to_list() if "line" in self._stops.columns else ["Western"] * len(station_list)
+        line_to_stations: dict[str, list[str]] = {}
+        for _st, _ln in zip(station_list, lines_list):
+            line_to_stations.setdefault(str(_ln), []).append(_st)
+
         while current <= end_date:
             monsoon = _is_monsoon(current.month, p)
             seasonal = p.monsoon_factor if monsoon else 1.0
             weekday = current.weekday()  # 0=Monday, 6=Sunday
+            dow_factor = p.dow_factors[weekday]
 
             for row in self._stops.iter_rows(named=True):
+                # Feature 2: missing day gaps
+                if random.random() < p.gap_probability:
+                    continue
+
                 station = row["station_name"]
                 line = row.get("line", "Western")
                 line_factor = _line_factor(str(line), p)
+
+                # Feature 1: station personality
+                personality = _station_personality(station)
+
+                # Feature 3: incident injection
+                incident_map = _get_incident_stations(
+                    current.year, current.month, str(line),
+                    line_to_stations.get(str(line), []), p.incident_rate
+                )
+                incident_mult = incident_map.get((station, current), 1.0)
 
                 for hour in range(24):
                     period = _get_period(hour)
@@ -115,11 +184,8 @@ class DelaySimulator:
                         base_mean = p.offpeak_mean
                         base_std = p.offpeak_std
 
-                    # Weekend reduction: ~30% fewer delays
-                    weekend_factor = 0.70 if weekday >= 5 else 1.0
-
-                    mean = base_mean * line_factor * seasonal * weekend_factor
-                    std = base_std * line_factor
+                    mean = base_mean * line_factor * seasonal * dow_factor * personality * incident_mult
+                    std = base_std * line_factor * personality
 
                     # Simulate individual train delays, then aggregate
                     n = p.trains_per_hour
