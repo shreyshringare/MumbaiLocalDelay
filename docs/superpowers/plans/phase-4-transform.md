@@ -47,7 +47,7 @@ from pipeline.transform.clean import (
 from pipeline.transform.features import add_features, add_confidence_interval
 
 
-def _make_raw(overrides: dict | None = None) -> pl.DataFrame:
+def _make_raw(overrides: dict[str, object] | None = None) -> pl.DataFrame:
     """Helper: build a minimal valid raw delay DataFrame."""
     base = {
         "date": [date(2024, 1, 15)],
@@ -181,7 +181,7 @@ class TestAddFeatures:
 - [ ] **Step 2: Run to verify failure**
 
 ```bash
-uv run pytest tests/test_clean.py -v
+uv run python -m pytest tests/test_clean.py -v
 ```
 
 Expected: `ImportError` on all tests.
@@ -281,7 +281,7 @@ def detect_gaps(df: pl.DataFrame) -> pl.DataFrame:
     """
     if len(df) == 0:
         return pl.DataFrame(schema={"date": pl.Date, "station_name": pl.String,
-                                    "missing_hours": pl.List(pl.Int32)})
+                                    "missing_hours": pl.List(pl.Int64)})
 
     # Build expected: every (date, station) should have 24 hours
     all_hours = set(range(24))
@@ -303,7 +303,7 @@ def detect_gaps(df: pl.DataFrame) -> pl.DataFrame:
 
     if not gaps:
         return pl.DataFrame(schema={"date": pl.Date, "station_name": pl.String,
-                                    "missing_hours": pl.List(pl.Int32)})
+                                    "missing_hours": pl.List(pl.Int64)})
     return pl.DataFrame(gaps)
 
 
@@ -322,7 +322,7 @@ def clean_pipeline(raw: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame]:
 - [ ] **Step 2: Run relevant tests**
 
 ```bash
-uv run pytest tests/test_clean.py::TestValidateDelays tests/test_clean.py::TestNormalizeStations tests/test_clean.py::TestDetectGaps -v
+uv run python -m pytest tests/test_clean.py::TestValidateDelays tests/test_clean.py::TestNormalizeStations tests/test_clean.py::TestDetectGaps -v
 ```
 
 Expected: all PASSED.
@@ -357,7 +357,7 @@ def add_confidence_interval(df: pl.DataFrame) -> pl.DataFrame:
     Formula: mean ± 1.96 * (std / sqrt(n))
     Clamps ci_lower to -5.0 (physical minimum).
     """
-    return df.with_columns([
+    return df.with_columns(
         (
             pl.col("avg_delay")
             - 1.96 * pl.col("std_delay") / pl.col("sample_count").cast(pl.Float64).sqrt()
@@ -366,7 +366,7 @@ def add_confidence_interval(df: pl.DataFrame) -> pl.DataFrame:
             pl.col("avg_delay")
             + 1.96 * pl.col("std_delay") / pl.col("sample_count").cast(pl.Float64).sqrt()
         ).clip(-5.0, 120.0).alias("ci_upper"),
-    ])
+    )
 
 
 def add_on_time_pct(df: pl.DataFrame) -> pl.DataFrame:
@@ -400,7 +400,7 @@ def add_features(df: pl.DataFrame) -> pl.DataFrame:
 - [ ] **Step 2: Run feature tests**
 
 ```bash
-uv run pytest tests/test_clean.py::TestAddFeatures -v
+uv run python -m pytest tests/test_clean.py::TestAddFeatures -v
 ```
 
 Expected: all PASSED.
@@ -408,7 +408,7 @@ Expected: all PASSED.
 - [ ] **Step 3: Run full test suite**
 
 ```bash
-uv run pytest tests/ -v
+uv run python -m pytest tests/ -v
 ```
 
 Expected: all PASSED.
