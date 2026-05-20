@@ -138,10 +138,10 @@ app.layout = html.Div(
                 "backgroundColor": "#16213e", "flexWrap": "wrap",
             },
             children=[
-                _insight_chip("Dadar avg delay", "8.3 min", "Central line bottleneck — r=0.74 with CSMT", "#E63946"),
-                _insight_chip("Monsoon uplift", "1.4×", "Central delays Jun–Sep vs dry season", "#E9C46A"),
-                _insight_chip("Evening vs morning σ", "+40%", "Evening peak is incident-driven, not structural", "#457B9D"),
-                _insight_chip("Passenger-hours lost", "~50,000 /day", "At Dadar alone, peak hours", "#2A9D8F"),
+                _insight_chip("Central on-time rate", "22%", "vs Harbour 36% — same city, different lines", "#E63946"),
+                _insight_chip("Dadar cascade", "r = 0.97", "Dadar delays → Vikhroli/Thane near-deterministic", "#E9C46A"),
+                _insight_chip("Monsoon uplift", "3.3×", "Sandhurst Road Jun–Sep vs dry season", "#457B9D"),
+                _insight_chip("Passenger-hours lost", "~45,000 /day", "Central line peak hours estimate", "#2A9D8F"),
             ],
         ),
         dcc.Tabs(
