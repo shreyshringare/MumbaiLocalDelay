@@ -34,7 +34,7 @@ tests/
 
 ```python
 """Integration tests for DelayStore — uses real DuckDB (no mocking)."""
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import polars as pl
@@ -107,7 +107,6 @@ class TestDelayStore:
         # Insert 35 days of data
         rows = []
         for day in range(35):
-            from datetime import timedelta
             d = date(2024, 1, 1) + timedelta(days=day)
             rows.append({
                 "date": d, "station_name": "Dadar", "line": "Central",
@@ -131,7 +130,7 @@ class TestDelayStore:
 - [ ] **Step 2: Run to verify failure**
 
 ```bash
-uv run pytest tests/test_store.py -v
+uv run python -m pytest tests/test_store.py -v
 ```
 
 Expected: `ImportError: cannot import name 'DelayStore' from 'pipeline.store'`
@@ -183,11 +182,23 @@ class DelayStore:
         """Insert or replace rows (idempotent via PRIMARY KEY)."""
         arrow_table = df.to_arrow()
         self.conn.register("_upsert_df", arrow_table)
-        self.conn.execute("""
-            INSERT OR REPLACE INTO delays
-            SELECT * FROM _upsert_df
-        """)
-        self.conn.unregister("_upsert_df")
+        try:
+            self.conn.execute("""
+                INSERT INTO delays
+                SELECT * FROM _upsert_df
+                ON CONFLICT (date, station_name, hour) DO UPDATE SET
+                    line = EXCLUDED.line,
+                    weekday = EXCLUDED.weekday,
+                    period = EXCLUDED.period,
+                    avg_delay = EXCLUDED.avg_delay,
+                    std_delay = EXCLUDED.std_delay,
+                    sample_count = EXCLUDED.sample_count,
+                    ci_lower = EXCLUDED.ci_lower,
+                    ci_upper = EXCLUDED.ci_upper,
+                    on_time_pct = EXCLUDED.on_time_pct
+            """)
+        finally:
+            self.conn.unregister("_upsert_df")
 
     def worst_stations(self, line: str, n: int = 10) -> pl.DataFrame:
         """Top N stations by mean avg_delay for a given line."""
@@ -249,11 +260,10 @@ class DelayStore:
                 AVG(on_time_pct) AS on_time_pct
             FROM delays
             WHERE line = ?
-            AND date >= (SELECT MAX(date) FROM delays) - (? * INTERVAL '1 day')
             GROUP BY date
             ORDER BY date DESC
             LIMIT ?
-        """, [line, days - 1, days]).arrow()
+        """, [line, days]).arrow()
         return pl.from_arrow(result)
 
     def peak_comparison(self, station: str) -> pl.DataFrame:
@@ -295,7 +305,7 @@ class DelayStore:
 - [ ] **Step 2: Run tests**
 
 ```bash
-uv run pytest tests/test_store.py -v
+uv run python -m pytest tests/test_store.py -v
 ```
 
 Expected: all PASSED.
@@ -342,7 +352,7 @@ def station_delay_matrix(store: DelayStore, line: str | None = None) -> pl.DataF
         DataFrame with columns [station_name, hour, avg_delay, ci_lower, ci_upper]
     """
     where_clause = "WHERE line = ?" if line else ""
-    params = [line] if line else []
+    params: list[str] = [line] if line else []
 
     result = store.conn.execute(f"""
         SELECT
@@ -425,7 +435,7 @@ def peak_rankings(store: DelayStore, line: str, period: str, n: int = 10) -> pl.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add analysis/delays.py analysis/rankings.py
+git add analysis/__init__.py analysis/delays.py analysis/rankings.py
 git commit -m "feat(analysis): delay matrix and route ranking queries"
 ```
 
