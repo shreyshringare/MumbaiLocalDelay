@@ -117,10 +117,9 @@ def write_baselines(df: pl.DataFrame, out_path: Path) -> None:
 
 
 if __name__ == "__main__":
+    from pathlib import Path
     csv = Path("data/raw/real/etrain_delays.csv")
     out = Path("data/raw/real_baselines.parquet")
     df = load_mumbai_baselines(csv)
-    print(f"Mumbai stations found: {df['station_name'].n_unique()}")
-    print(df.select(["station_name", "line", "avg_delay_real", "sample_trains"]))
     write_baselines(df, out)
-    print(f"Saved → {out}")
+    print(f"Written {len(df)} stations to {out}")

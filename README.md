@@ -72,6 +72,7 @@ Sandhurst Road (Harbour line) shows **3.3× higher delays in June–September** 
 | **Correlation analysis** — Pearson r co-delay matrix via DuckDB CORR() self-join, top-15 per line | `analysis/correlation.py`, Correlation tab |
 | **Data quality** — freshness monitoring, row counts, graceful empty states | `pipeline/store.py`, dashboard Data Quality tab |
 | **Business translation** — delay → passenger-hours lost → economic impact estimate | `dashboard/charts.py`, Business Insights tab |
+| **Real data integration** — etrain.info scraping, intercity-to-local calibration, data provenance documentation | `pipeline/ingest/real_data.py` |
 
 ---
 
@@ -229,17 +230,22 @@ Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
 ## Architecture
 
 ```
-GTFS Static Data
+GTFS Static Data              etrain.info Delay Baselines
+      ↓                              ↓
+  httpx fetch → GTFS parser    9 Mumbai stations
+  120 stations, routes         real intercity delay stats
+      ↓                              ↓
+  Polars transform         Simulator calibration (base_mean override)
+      ↓___________________________|
       ↓
-  httpx fetch → GTFS parser → 120 stations, routes, stop_times
-      ↓
-  Polars transform → clean delays, feature engineering (period, weekday, hour)
+  DelaySimulator — Gaussian model per (station, hour, period)
+  Calibrated to real intercity baselines for 9 stations
       ↓
   DuckDB store → typed query methods, parameterized queries
       ↓
   Prophet anomaly detection → per-station 95% confidence bounds
       ↓
-  Plotly Dash dashboard → 7 interactive tabs
+  Plotly Dash dashboard → 9 interactive tabs
 ```
 
 ---
@@ -318,7 +324,7 @@ uv run python -m dashboard.app              # start dashboard at localhost:8050
 | Metric | Value |
 |---|---|
 | Stations covered | 120+ |
-| Historical data | 2 years simulated |
+| Historical data | 2 years simulated · calibrated to real etrain.info station baselines |
 | Anomaly precision | ~87% recall on held-out incident days |
 | Dashboard tabs | 9 |
 | Test coverage | 131 passing tests |

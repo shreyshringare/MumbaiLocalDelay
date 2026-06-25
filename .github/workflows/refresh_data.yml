@@ -1,0 +1,36 @@
+name: Refresh Real Baselines
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Regenerate real baselines from committed etrain_delays.csv
+        run: python pipeline/ingest/real_data.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet data/raw/real_baselines.parquet || (
+            git add data/raw/real_baselines.parquet &&
+            git commit -m "chore: refresh real_baselines.parquet [skip ci]" &&
+            git push
+          )

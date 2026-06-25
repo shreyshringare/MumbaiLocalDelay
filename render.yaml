@@ -1,0 +1,13 @@
+# Render deployment configuration
+# seed_db.py uses committed data/raw/real_baselines.parquet — no network calls at build time
+services:
+  - type: web
+    name: mumbai-local-delay
+    env: python
+    buildCommand: pip install -r requirements.txt && python scripts/seed_db.py
+    startCommand: gunicorn dashboard.app:server --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    envVars:
+      - key: DUCKDB_PATH
+        value: delays.duckdb
+      - key: DATA_RAW_DIR
+        value: data/raw
