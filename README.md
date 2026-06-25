@@ -1,8 +1,10 @@
 # Mumbai Local Train Delay Visualizer
 
-> **7.5 million commuters. 120 stations. Which ones are failing them — and why?**
+> **Automated analytics pipeline — API ingestion, statistical modeling, AI-powered querying, and executive-ready dashboards.**
 
-Mumbai's suburban rail is the lifeline of India's financial capital. When it runs late, the city loses productivity at scale. This project turns two years of schedule data into a diagnostic: which stations are worst, what causes spikes, where delays spread, and what it costs.
+This project demonstrates end-to-end automation: scheduled data ingestion from public APIs, statistical modeling calibrated on real Indian Railways data, a FastAPI backend with 11 REST endpoints, and a natural language querying interface powered by Claude (Anthropic LLM) that translates plain-English questions into live DuckDB SQL.
+
+Mumbai's suburban rail carries 7.5 million daily commuters. When it runs late, the city loses productivity at scale. This project turns two years of schedule data into a diagnostic: which stations are worst, what causes spikes, where delays spread, and what it costs.
 
 **Live dashboard →** [mumbailocaldelay.onrender.com](https://mumbailocaldelay.onrender.com)
 
@@ -73,6 +75,8 @@ Sandhurst Road (Harbour line) shows **3.3× higher delays in June–September** 
 | **Data quality** — freshness monitoring, row counts, graceful empty states | `pipeline/store.py`, dashboard Data Quality tab |
 | **Business translation** — delay → passenger-hours lost → economic impact estimate | `dashboard/charts.py`, Business Insights tab |
 | **Real data integration** — etrain.info scraping, intercity-to-local calibration, data provenance documentation | `pipeline/ingest/real_data.py` |
+| **LLM integration** — natural language → SQL → DuckDB via Claude API, prompt engineering, SQL safety guardrails | `api/routers/ask.py`, Ask AI tab |
+| **Full-stack automation** — FastAPI REST backend, React 19 + TypeScript frontend, GitHub Actions nightly pipeline, Render deployment | `api/`, `frontend/`, `.github/workflows/` |
 
 ---
 
@@ -197,6 +201,7 @@ Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
 | Business Insights | Plain-English callouts + economic impact estimate |
 | Prediction | Prophet 7-day forecast per station with 95% CI band |
 | Correlation | Station co-delay Pearson r heatmap — top 15 per line |
+| Ask AI | Natural language question → Claude-generated SQL → live DuckDB result |
 
 ### Live Map
 ![Live Map](docs/screenshots/tab_live_map.png)
@@ -259,6 +264,9 @@ GTFS Static Data              etrain.info Delay Baselines
 | Anomaly detection | Prophet (Meta) | Handles seasonality without tuning |
 | Dashboard | Plotly Dash + Folium | Python-native, no JS required |
 | Deploy | Render | Zero-config deploy from repo |
+| LLM | Anthropic Claude Haiku | Natural language → SQL generation |
+| REST API | FastAPI + uvicorn | Typed endpoints, Pydantic schemas, CORS |
+| Frontend | React 19 + TypeScript + Vite | Strict TS, TanStack Query, react-plotly.js |
 
 ---
 
@@ -326,7 +334,7 @@ uv run python -m dashboard.app              # start dashboard at localhost:8050
 | Stations covered | 120+ |
 | Historical data | 2 years simulated · calibrated to real etrain.info station baselines |
 | Anomaly precision | ~87% recall on held-out incident days |
-| Dashboard tabs | 9 |
+| Dashboard tabs | 11 (incl. Ask AI + Methodology) |
 | Test coverage | 131 passing tests |
 | Worst station | Dadar CR — avg 8.3 min |
 | Best line | Harbour — avg 2.1 min |
