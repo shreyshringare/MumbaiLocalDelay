@@ -20,7 +20,7 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install ".[dev]"
 
       - name: Regenerate real baselines from committed etrain_delays.csv
         run: python pipeline/ingest/real_data.py

@@ -38,9 +38,9 @@ export function AnomalyTab() {
     <div>
       <h3 style={{ color: '#eaeaea', marginBottom: '12px', fontSize: '16px' }}>Anomaly Alerts — Prophet 95% CI</h3>
       {isLoading && <LoadingSpinner />}
-      {error && <ErrorMessage message={(error as Error).message} />}
+      {error && <ErrorMessage message={error instanceof Error ? error.message : String(error)} />}
       {data && data.length === 0 && <p style={{ color: '#888' }}>No anomalies detected.</p>}
-      {data && data.map((entry, i) => <AnomalyCard key={i} entry={entry} />)}
+      {data && data.map((entry) => <AnomalyCard key={entry.station + entry.date} entry={entry} />)}
     </div>
   )
 }

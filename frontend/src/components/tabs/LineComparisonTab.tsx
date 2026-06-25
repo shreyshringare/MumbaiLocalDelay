@@ -18,7 +18,7 @@ export function LineComparisonTab() {
   return (
     <div>
       {isLoading && <LoadingSpinner />}
-      {firstError && <ErrorMessage message={(firstError as Error).message} />}
+      {firstError && <ErrorMessage message={firstError instanceof Error ? firstError.message : String(firstError)} />}
       {!isLoading && !firstError && (
         <Plot
           data={[

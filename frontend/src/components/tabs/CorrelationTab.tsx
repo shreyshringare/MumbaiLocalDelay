@@ -28,7 +28,7 @@ export function CorrelationTab() {
         </select>
       </div>
       {isLoading && <LoadingSpinner />}
-      {error && <ErrorMessage message={(error as Error).message} />}
+      {error && <ErrorMessage message={error instanceof Error ? error.message : String(error)} />}
       {data && (
         <Plot
           data={[{
