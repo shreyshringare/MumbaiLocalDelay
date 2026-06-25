@@ -14,7 +14,7 @@ from analysis.anomaly import AnomalyBatch
 from analysis.correlation import station_correlation
 from analysis.forecasting import ForecastCache
 from api.deps import get_store
-from api.schemas import AnomalyEntry, ForecastPoint
+from api.schemas import AnomalyEntry, ForecastPoint, WaveStation
 from pipeline.store import DelayStore
 
 router = APIRouter(tags=["analysis"])
@@ -151,3 +151,32 @@ def get_forecast(
             status_code=500,
             content={"detail": str(exc)},
         )
+
+
+@router.get("/wave-data", response_model=list[WaveStation])
+def get_wave_data(
+    line: str = Query("Central", pattern="^(Central|Western|Harbour)$"),
+    store: DelayStore = Depends(get_store),
+) -> list[WaveStation]:
+    """Per-hour avg delay for top 15 stations on a line — powers the Dashboard wave."""
+    df = store.wave_data(line)
+    results: list[WaveStation] = []
+    for row in df.iter_rows(named=True):
+        delays = [float(row.get(f"hour_{h}") or 0.0) for h in range(24)]
+        results.append(WaveStation(
+            station_name=str(row["station_name"]),
+            line_order=int(row["line_order"]),
+            delays=delays,
+        ))
+    return results
+
+
+@router.get("/forecast/status")
+def get_forecast_status() -> dict[str, object]:
+    """Prophet cache build progress. Poll every 5s from PredictionTab."""
+    cache = get_forecast_cache()
+    return {
+        "fitted": cache.fitted_count,
+        "total": cache.total_count,
+        "ready": cache.ready,
+    }

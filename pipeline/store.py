@@ -120,6 +120,72 @@ class DelayStore:
         assert isinstance(df, pl.DataFrame)
         return df
 
+    def wave_data(self, line: str, n: int = 15) -> pl.DataFrame:
+        """Per-hour avg delay for top N stations on a line.
+
+        Returns one row per station with columns: station_name, line_order,
+        hour_0 … hour_23. line_order is rank by all-time avg delay (0 = worst).
+        """
+        result = self.conn.execute(
+            """
+            WITH ranked AS (
+                SELECT
+                    station_name,
+                    ROW_NUMBER() OVER (ORDER BY AVG(avg_delay) DESC) - 1 AS line_order
+                FROM delays
+                WHERE line = ?
+                GROUP BY station_name
+                ORDER BY AVG(avg_delay) DESC
+                LIMIT ?
+            ),
+            hourly AS (
+                SELECT
+                    d.station_name,
+                    d.hour,
+                    AVG(d.avg_delay) AS avg_delay
+                FROM delays d
+                INNER JOIN ranked r ON d.station_name = r.station_name
+                WHERE d.line = ?
+                GROUP BY d.station_name, d.hour
+            )
+            SELECT
+                r.station_name,
+                r.line_order,
+                MAX(CASE WHEN h.hour = 0  THEN h.avg_delay ELSE 0 END) AS hour_0,
+                MAX(CASE WHEN h.hour = 1  THEN h.avg_delay ELSE 0 END) AS hour_1,
+                MAX(CASE WHEN h.hour = 2  THEN h.avg_delay ELSE 0 END) AS hour_2,
+                MAX(CASE WHEN h.hour = 3  THEN h.avg_delay ELSE 0 END) AS hour_3,
+                MAX(CASE WHEN h.hour = 4  THEN h.avg_delay ELSE 0 END) AS hour_4,
+                MAX(CASE WHEN h.hour = 5  THEN h.avg_delay ELSE 0 END) AS hour_5,
+                MAX(CASE WHEN h.hour = 6  THEN h.avg_delay ELSE 0 END) AS hour_6,
+                MAX(CASE WHEN h.hour = 7  THEN h.avg_delay ELSE 0 END) AS hour_7,
+                MAX(CASE WHEN h.hour = 8  THEN h.avg_delay ELSE 0 END) AS hour_8,
+                MAX(CASE WHEN h.hour = 9  THEN h.avg_delay ELSE 0 END) AS hour_9,
+                MAX(CASE WHEN h.hour = 10 THEN h.avg_delay ELSE 0 END) AS hour_10,
+                MAX(CASE WHEN h.hour = 11 THEN h.avg_delay ELSE 0 END) AS hour_11,
+                MAX(CASE WHEN h.hour = 12 THEN h.avg_delay ELSE 0 END) AS hour_12,
+                MAX(CASE WHEN h.hour = 13 THEN h.avg_delay ELSE 0 END) AS hour_13,
+                MAX(CASE WHEN h.hour = 14 THEN h.avg_delay ELSE 0 END) AS hour_14,
+                MAX(CASE WHEN h.hour = 15 THEN h.avg_delay ELSE 0 END) AS hour_15,
+                MAX(CASE WHEN h.hour = 16 THEN h.avg_delay ELSE 0 END) AS hour_16,
+                MAX(CASE WHEN h.hour = 17 THEN h.avg_delay ELSE 0 END) AS hour_17,
+                MAX(CASE WHEN h.hour = 18 THEN h.avg_delay ELSE 0 END) AS hour_18,
+                MAX(CASE WHEN h.hour = 19 THEN h.avg_delay ELSE 0 END) AS hour_19,
+                MAX(CASE WHEN h.hour = 20 THEN h.avg_delay ELSE 0 END) AS hour_20,
+                MAX(CASE WHEN h.hour = 21 THEN h.avg_delay ELSE 0 END) AS hour_21,
+                MAX(CASE WHEN h.hour = 22 THEN h.avg_delay ELSE 0 END) AS hour_22,
+                MAX(CASE WHEN h.hour = 23 THEN h.avg_delay ELSE 0 END) AS hour_23
+            FROM ranked r
+            LEFT JOIN hourly h ON r.station_name = h.station_name
+            GROUP BY r.station_name, r.line_order
+            ORDER BY r.line_order
+            """,
+            [line, n, line],
+        ).arrow()
+        df = pl.from_arrow(result)
+        assert isinstance(df, pl.DataFrame)
+        return df
+
     def line_trend(self, line: str, days: int = 30) -> pl.DataFrame:
         """Daily avg delay trend for a line over last N days."""
         result = self.conn.execute(

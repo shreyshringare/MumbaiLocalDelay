@@ -77,3 +77,9 @@ class ForecastPoint(BaseModel):
     yhat: float
     yhat_lower: float
     yhat_upper: float
+
+
+class WaveStation(BaseModel):
+    station_name: str
+    line_order: int
+    delays: list[float]  # length 24, indexed by hour

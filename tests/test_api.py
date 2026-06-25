@@ -72,6 +72,13 @@ def make_mock_store() -> MagicMock:
 
     store.peak_window.return_value = "07:00-11:00"
     store.close.return_value = None
+
+    hour_cols = {f"hour_{h}": [2.0 + h * 0.1, 1.5 + h * 0.1] for h in range(24)}
+    store.wave_data.return_value = pl.DataFrame({
+        "station_name": ["Dadar CR", "Thane"],
+        "line_order": [0, 1],
+        **hour_cols,
+    })
     return store
 
 
@@ -181,6 +188,29 @@ def test_methodology_returns_200(client: TestClient) -> None:
 def test_insights_function_importable_from_analysis() -> None:
     """make_business_insights must live in analysis.insights, not dashboard.charts."""
     from analysis.insights import make_business_insights  # noqa: F401
+
+
+def test_wave_data_returns_200(client: TestClient) -> None:
+    """GET /api/wave-data returns 200 with a list of WaveStation objects."""
+    resp = client.get("/api/wave-data?line=Central")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    if data:
+        assert "station_name" in data[0]
+        assert "line_order" in data[0]
+        assert "delays" in data[0]
+        assert len(data[0]["delays"]) == 24
+
+
+def test_forecast_status_returns_200(client: TestClient) -> None:
+    """GET /api/forecast/status returns 200 with fitted, total, ready keys."""
+    resp = client.get("/api/forecast/status")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "fitted" in body
+    assert "total" in body
+    assert "ready" in body
 
 
 def test_forecast_cache_exposes_progress() -> None:
