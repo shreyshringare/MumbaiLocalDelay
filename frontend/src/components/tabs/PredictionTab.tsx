@@ -14,6 +14,32 @@ function isComputing(data: ForecastPoint[] | ComputingStatus): data is Computing
   return !Array.isArray(data)
 }
 
+function ForecastProgress() {
+  const { data: status } = useQuery({
+    queryKey: ['forecast-status'],
+    queryFn: api.forecastStatus,
+    refetchInterval: (query) => query.state.data?.ready ? false : 5000,
+  })
+
+  const fitted = status?.fitted ?? 0
+  const total = status?.total ?? 0
+  const pct = total > 0 ? Math.round((fitted / total) * 100) : 0
+
+  return (
+    <div style={{ padding: '24px 0' }}>
+      <p style={{ color: '#E9C46A', fontWeight: 600, marginBottom: '8px' }}>
+        Computing forecasts — {fitted} / {total || '...'} stations
+      </p>
+      <div style={{ background: '#2a2a3e', borderRadius: '4px', height: '6px', width: '300px', marginBottom: '8px' }}>
+        <div style={{ background: '#2a9d8f', width: `${pct}%`, height: '100%', borderRadius: '4px', transition: 'width 1s ease' }} />
+      </div>
+      <p style={{ color: '#555', fontSize: '11px' }}>
+        Explore the Dashboard tab while you wait
+      </p>
+    </div>
+  )
+}
+
 export function PredictionTab() {
   const [station, setStation] = useState(STATIONS[0])
 
@@ -39,9 +65,9 @@ export function PredictionTab() {
         </select>
       </div>
       {isLoading && <LoadingSpinner />}
-      {error && <ErrorMessage message={(error as Error).message} />}
+      {error && <ErrorMessage message={error instanceof Error ? error.message : String(error)} />}
       {data && isComputing(data) && (
-        <p style={{ color: '#E9C46A', padding: '16px' }}>Prophet model computing... auto-refreshing</p>
+        <ForecastProgress />
       )}
       {data && !isComputing(data) && (
         <Plot
