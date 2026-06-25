@@ -5,7 +5,11 @@ const BASE = '/api'
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`)
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-  return res.json() as Promise<T>
+  const contentType = res.headers.get('content-type')
+  if (!contentType?.includes('application/json')) {
+    throw new Error(`Expected JSON, got ${contentType ?? 'unknown'}`)
+  }
+  return res.json() as T
 }
 
 // --- Types matching api/schemas.py ---
@@ -75,6 +79,18 @@ export interface CorrelationResponse {
   matrix: number[][]
 }
 
+export interface WaveStation {
+  station_name: string
+  line_order: number
+  delays: number[]  // length 24, index = hour
+}
+
+export interface ForecastStatus {
+  fitted: number
+  total: number
+  ready: boolean
+}
+
 // --- API functions ---
 
 export const api = {
@@ -88,4 +104,6 @@ export const api = {
   forecast: (station: string) => get<ForecastPoint[] | { status: string }>(`/forecast?station=${encodeURIComponent(station)}`),
   correlation: (line: string) => get<CorrelationResponse>(`/correlation?line=${encodeURIComponent(line)}`),
   methodology: () => get<Record<string, unknown>>('/methodology'),
+  waveData: (line: string) => get<WaveStation[]>(`/wave-data?line=${encodeURIComponent(line)}`),
+  forecastStatus: () => get<ForecastStatus>('/forecast/status'),
 }
