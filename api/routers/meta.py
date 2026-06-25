@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 from api.deps import get_store
 from api.schemas import InsightsResponse, QualityEntry, StationDelay
-from dashboard.charts import make_business_insights
+from analysis.insights import make_business_insights
 from pipeline.store import DelayStore
 
 router = APIRouter(tags=["meta"])
@@ -123,9 +123,10 @@ def get_methodology() -> dict[str, Any]:
         "data_sources": {
             "title": "Data Sources",
             "content": (
-                "Train delay data sourced from Mumbai Railway Vikas Corporation (MRVC) "
-                "and supplemented with crowd-sourced delay reports. Covers Central, Western, "
-                "and Harbour lines with hourly granularity."
+                "Delays are simulated using a statistical model calibrated on real "
+                "Indian Railways timetable data and published delay research. "
+                "Covers Central, Western, and Harbour lines with hourly granularity. "
+                "This is NOT live data — see the provenance label on the Dashboard tab."
             ),
         },
         "delay_calculation": {

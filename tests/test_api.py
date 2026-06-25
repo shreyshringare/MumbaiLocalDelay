@@ -176,3 +176,8 @@ def test_methodology_returns_200(client: TestClient) -> None:
     resp = client.get("/api/methodology")
     assert resp.status_code == 200
     assert isinstance(resp.json(), dict)
+
+
+def test_insights_function_importable_from_analysis() -> None:
+    """make_business_insights must live in analysis.insights, not dashboard.charts."""
+    from analysis.insights import make_business_insights  # noqa: F401
