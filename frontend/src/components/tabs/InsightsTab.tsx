@@ -1,7 +1,57 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../../api'
 import { LoadingSpinner } from '../LoadingSpinner'
 import { ErrorMessage } from '../ErrorMessage'
+
+function ExportButton() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleExport() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/export/excel')
+      if (!res.ok) throw new Error(`Export failed: ${res.status} ${res.statusText}`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const today = new Date().toISOString().slice(0, 10)
+      a.download = `mumbai_local_delays_${today}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: '16px' }}>
+      <button
+        onClick={handleExport}
+        disabled={loading}
+        style={{
+          background: loading ? '#444' : '#1C3557',
+          color: '#fff',
+          border: '1px solid #2a9d8f',
+          borderRadius: '6px',
+          padding: '8px 18px',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          letterSpacing: '0.02em',
+        }}
+      >
+        {loading ? 'Generating...' : 'Export to Excel (.xlsx)'}
+      </button>
+      {error && <span style={{ color: '#E63946', fontSize: '12px', marginLeft: '12px' }}>{error}</span>}
+    </div>
+  )
+}
 
 interface KpiChipProps {
   label: string
@@ -31,8 +81,9 @@ export function InsightsTab() {
   return (
     <div>
       <h3 style={{ color: '#eaeaea', marginBottom: '16px', fontSize: '16px' }}>Business Insights</h3>
+      <ExportButton />
       {isLoading && <LoadingSpinner />}
-      {error && <ErrorMessage message={(error as Error).message} />}
+      {error && <ErrorMessage message={error instanceof Error ? error.message : String(error)} />}
       {data && (
         <>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>

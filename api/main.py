@@ -7,7 +7,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import analysis, ask, delays, meta
+from api.routers import analysis, ask, delays, export, meta
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,7 @@ app.add_middleware(
 app.include_router(delays.router, prefix="/api")
 app.include_router(analysis.router, prefix="/api")
 app.include_router(meta.router, prefix="/api")
+app.include_router(export.router, prefix="/api")
 app.include_router(ask.router, prefix="/api")
 
 import os
