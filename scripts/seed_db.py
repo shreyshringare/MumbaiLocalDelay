@@ -12,6 +12,7 @@ from pathlib import Path
 
 import polars as pl
 
+from pipeline.ingest.real_data import load_mumbai_baselines, write_baselines
 from pipeline.ingest.simulator import DelaySimulator, MumbaiDelayParams
 from pipeline.store import DelayStore
 from pipeline.transform.clean import clean_pipeline
@@ -39,8 +40,27 @@ def main() -> None:
     stops = pl.read_parquet(stops_path)
     log.info("Loaded %d stations", len(stops))
 
+    # Load real baselines and calibrate simulator
+    baselines_csv = Path("data/raw/real/etrain_delays.csv")
+    baselines_out = Path("data/raw/real_baselines.parquet")
+    baselines: dict[str, float] = {}
+    if baselines_csv.exists():
+        log.info("Loading real delay baselines from %s", baselines_csv)
+        baselines_df = load_mumbai_baselines(baselines_csv)
+        write_baselines(baselines_df, baselines_out)
+        log.info("Wrote baselines → %s (%d stations)", baselines_out, len(baselines_df))
+        baselines = dict(
+            zip(
+                baselines_df["station_name"].to_list(),
+                baselines_df["avg_delay_real"].to_list(),
+            )
+        )
+        log.info("Real baselines: %s", baselines)
+    else:
+        log.warning("Real data CSV not found (%s) — using simulated params only", baselines_csv)
+
     log.info("Simulating delays %s → %s ...", START, END)
-    sim = DelaySimulator(stops=stops, params=MumbaiDelayParams())
+    sim = DelaySimulator(stops=stops, params=MumbaiDelayParams(), baselines=baselines)
     raw = sim.generate(START, END)
     log.info("Generated %d raw rows", len(raw))
 

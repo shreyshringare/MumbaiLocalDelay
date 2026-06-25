@@ -120,14 +120,22 @@ def _is_monsoon(month: int, params: MumbaiDelayParams) -> bool:
 class DelaySimulator:
     """Generates statistically-grounded delay data for Mumbai stations."""
 
-    def __init__(self, stops: pl.DataFrame, params: MumbaiDelayParams) -> None:
+    def __init__(
+        self,
+        stops: pl.DataFrame,
+        params: MumbaiDelayParams,
+        baselines: dict[str, float] | None = None,
+    ) -> None:
         """
         Args:
             stops: DataFrame with columns [station_name, line, ...]
             params: Mumbai delay distribution parameters
+            baselines: Optional dict mapping station_name → real avg_delay (minutes).
+                When provided, replaces hardcoded peak means for matching stations.
         """
         self._stops = stops
         self._params = params
+        self._baselines: dict[str, float] = baselines or {}
 
     def generate(self, start_date: date, end_date: date) -> pl.DataFrame:
         """Generate daily delay records for every station and hour.
@@ -175,13 +183,18 @@ class DelaySimulator:
                     period = _get_period(hour)
 
                     if period == "morning_peak":
-                        base_mean = p.morning_peak_mean
+                        base_mean = self._baselines.get(station, p.morning_peak_mean)
                         base_std = p.morning_peak_std
                     elif period == "evening_peak":
-                        base_mean = p.evening_peak_mean
+                        base_mean = self._baselines.get(station, p.evening_peak_mean)
                         base_std = p.evening_peak_std
                     else:
-                        base_mean = p.offpeak_mean
+                        # Off-peak: scale real baseline down proportionally
+                        real = self._baselines.get(station)
+                        if real is not None:
+                            base_mean = real * (p.offpeak_mean / p.morning_peak_mean)
+                        else:
+                            base_mean = p.offpeak_mean
                         base_std = p.offpeak_std
 
                     mean = base_mean * line_factor * seasonal * dow_factor * personality * incident_mult

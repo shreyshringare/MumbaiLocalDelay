@@ -12,6 +12,8 @@ data/raw/
 data/processed/
 *.duckdb
 # Keep stops.parquet in git (4KB, needed for deploy)
+# Keep real_baselines.parquet in git (small, used for calibration)
+!data/raw/real_baselines.parquet
 
 # Environment
 .env
