@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import polars as pl
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 
 from api.deps import get_store
 from api.schemas import InsightsResponse, QualityEntry, StationDelay
@@ -22,7 +25,8 @@ def _load_stops() -> pl.DataFrame:
     """Load stops parquet with lat/lon. Returns empty DataFrame on failure."""
     try:
         return pl.read_parquet(_STOPS_PATH)
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to load stops parquet: %s", e)
         return pl.DataFrame({"stop_name": [], "latitude": [], "longitude": []})
 
 
@@ -97,7 +101,10 @@ def get_insights(
     store: DelayStore = Depends(get_store),
 ) -> InsightsResponse:
     """High-level business insights derived from the delay dataset."""
-    data = make_business_insights(store)
+    try:
+        data = make_business_insights(store)
+    except Exception:
+        raise HTTPException(status_code=503, detail="Insights unavailable")
     return InsightsResponse(
         worst_station=str(data.get("worst_station", "N/A")),
         worst_delay=float(data.get("worst_station_delay", 0.0)),

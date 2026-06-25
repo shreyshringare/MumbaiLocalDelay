@@ -111,8 +111,14 @@ def get_correlation(
     store: DelayStore = Depends(get_store),
 ) -> dict[str, Any]:
     """Pearson r correlation matrix for top-15 stations on a line."""
-    stations, matrix = station_correlation(store, line)
-    return {"stations": stations, "matrix": matrix}
+    try:
+        stations, matrix = station_correlation(store, line)
+        return {"stations": stations, "matrix": matrix}
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(exc), "stations": [], "matrix": []},
+        )
 
 
 @router.get("/forecast")
@@ -126,15 +132,22 @@ def get_forecast(
     if result is None:
         return JSONResponse(status_code=202, content={"status": "computing"})
 
-    _history_df, forecast_df = result
-    points: list[ForecastPoint] = []
-    for _, row in forecast_df.iterrows():
-        points.append(
-            ForecastPoint(
-                ds=str(row["ds"])[:10],  # YYYY-MM-DD
-                yhat=float(row["yhat"]),
-                yhat_lower=float(row["yhat_lower"]),
-                yhat_upper=float(row["yhat_upper"]),
+    try:
+        _history_df, forecast_df = result
+        points: list[ForecastPoint] = []
+        # forecast_df is a pandas DataFrame (returned by Prophet); use iterrows()
+        for _, row in forecast_df.iterrows():
+            points.append(
+                ForecastPoint(
+                    ds=str(row["ds"])[:10],  # YYYY-MM-DD
+                    yhat=float(row["yhat"]),
+                    yhat_lower=float(row["yhat_lower"]),
+                    yhat_upper=float(row["yhat_upper"]),
+                )
             )
+        return points
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(exc)},
         )
-    return points

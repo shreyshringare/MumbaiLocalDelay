@@ -1,5 +1,6 @@
 """FastAPI application entry point for Mumbai Local Delay API."""
 
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -7,6 +8,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routers import analysis, delays, meta
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -18,6 +21,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     store = DelayStore()
     try:
         start_forecast_cache(store)
+    except Exception as exc:
+        logger.error("Failed to start forecast cache background thread: %s", exc)
     finally:
         store.close()
     yield

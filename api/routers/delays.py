@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Annotated
-
 import polars as pl
 from fastapi import APIRouter, Depends, Query
 
