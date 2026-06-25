@@ -12,3 +12,5 @@ services:
         value: delays.duckdb
       - key: DATA_RAW_DIR
         value: data/raw
+      - key: ANTHROPIC_API_KEY
+        sync: false

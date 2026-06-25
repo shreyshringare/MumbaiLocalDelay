@@ -9,6 +9,8 @@ import { InsightsTab } from './components/tabs/InsightsTab'
 import { PredictionTab } from './components/tabs/PredictionTab'
 import { CorrelationTab } from './components/tabs/CorrelationTab'
 import { MethodologyTab } from './components/tabs/MethodologyTab'
+import { MapTab } from './components/tabs/MapTab'
+import { AskAITab } from './components/tabs/AskAITab'
 
 const TABS = [
   { id: 'map', label: 'Station Map' },
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'prediction', label: 'Prediction' },
   { id: 'correlation', label: 'Correlation' },
   { id: 'methodology', label: 'Methodology' },
+  { id: 'ask', label: 'Ask AI' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -36,7 +39,8 @@ function renderTab(tab: TabId): ReactNode {
     case 'prediction': return <PredictionTab />
     case 'correlation': return <CorrelationTab />
     case 'methodology': return <MethodologyTab />
-    case 'map': return <p style={{ color: '#888' }}>Map tab coming in Task 4</p>
+    case 'map': return <MapTab />
+    case 'ask': return <AskAITab />
     default: return null
   }
 }

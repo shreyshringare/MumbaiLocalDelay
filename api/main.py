@@ -7,7 +7,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import analysis, delays, meta
+from api.routers import analysis, ask, delays, meta
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +38,18 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 app.include_router(delays.router, prefix="/api")
 app.include_router(analysis.router, prefix="/api")
 app.include_router(meta.router, prefix="/api")
+app.include_router(ask.router, prefix="/api")
+
+import os
+from fastapi.staticfiles import StaticFiles
+
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
