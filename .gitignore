@@ -28,3 +28,4 @@ data/processed/
 Thumbs.db
 .gstack/
 .worktrees/
+.claude/settings.local.json
