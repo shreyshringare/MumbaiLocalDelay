@@ -1,4 +1,14 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { HeatmapTab } from './components/tabs/HeatmapTab'
+import { RankingsTab } from './components/tabs/RankingsTab'
+import { AnomalyTab } from './components/tabs/AnomalyTab'
+import { LineComparisonTab } from './components/tabs/LineComparisonTab'
+import { QualityTab } from './components/tabs/QualityTab'
+import { InsightsTab } from './components/tabs/InsightsTab'
+import { PredictionTab } from './components/tabs/PredictionTab'
+import { CorrelationTab } from './components/tabs/CorrelationTab'
+import { MethodologyTab } from './components/tabs/MethodologyTab'
 
 const TABS = [
   { id: 'map', label: 'Station Map' },
@@ -14,6 +24,22 @@ const TABS = [
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
+
+function renderTab(tab: TabId): ReactNode {
+  switch (tab) {
+    case 'heatmap': return <HeatmapTab />
+    case 'rankings': return <RankingsTab />
+    case 'anomaly': return <AnomalyTab />
+    case 'lines': return <LineComparisonTab />
+    case 'quality': return <QualityTab />
+    case 'insights': return <InsightsTab />
+    case 'prediction': return <PredictionTab />
+    case 'correlation': return <CorrelationTab />
+    case 'methodology': return <MethodologyTab />
+    case 'map': return <p style={{ color: '#888' }}>Map tab coming in Task 4</p>
+    default: return null
+  }
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('map')
@@ -52,12 +78,9 @@ export default function App() {
         ))}
       </div>
 
-      {/* Tab content — lazy placeholder */}
+      {/* Tab content */}
       <div style={{ minHeight: '400px', background: '#16213e', borderRadius: '8px', padding: '16px' }}>
-        <p style={{ color: '#888', fontSize: '13px' }}>
-          Tab: <strong style={{ color: '#E9C46A' }}>{activeTab}</strong>
-          {' '}— component coming in Task 3/4
-        </p>
+        {renderTab(activeTab)}
       </div>
     </div>
   )
