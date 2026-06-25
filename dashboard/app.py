@@ -127,7 +127,7 @@ app.layout = html.Div(
                     style={"color": "#eaeaea", "margin": 0, "fontSize": "22px"},
                 ),
                 html.P(
-                    "Real GTFS data · Prophet forecast · co-delay correlation · 120+ stations",
+                    "Simulated delays calibrated on real Indian Railways data · Prophet forecast · 120+ stations",
                     style={"color": "#888", "margin": "4px 0 0 0", "fontSize": "13px"},
                 ),
             ],

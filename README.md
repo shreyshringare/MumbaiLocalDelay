@@ -264,7 +264,6 @@ MumbaiLocal/
 ├── pipeline/                      # Data ingestion + storage layer
 │   ├── ingest/
 │   │   ├── gtfs.py                # GTFS schedule fetch + parse (120 stations)
-│   │   ├── loader.py              # Real data loader (etrain CSV → DuckDB)
 │   │   └── simulator.py          # Delay simulator: personality, DoW curve, incidents
 │   ├── transform/                 # Polars feature engineering (weekday, period, CI)
 │   └── store.py                   # DelayStore — 9 typed DuckDB query methods
