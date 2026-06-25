@@ -40,6 +40,8 @@ class ForecastCache:
         self._cache: dict[str, tuple[pd.DataFrame, pd.DataFrame]] = {}
         self._lock = threading.Lock()
         self.ready = False
+        self.fitted_count: int = 0
+        self.total_count: int = 0
 
     def build(self, store: DelayStore) -> None:
         """Entry point for background thread. Fits Prophet for every station.
@@ -54,6 +56,7 @@ class ForecastCache:
                 "SELECT DISTINCT station_name FROM delays ORDER BY station_name"
             ).fetchall()
             station_list = [row[0] for row in rows]
+            self.total_count = len(station_list)
 
             for station in station_list:
                 try:
@@ -85,6 +88,7 @@ class ForecastCache:
 
                     with self._lock:
                         self._cache[station] = (history_30d, forecast_7d)
+                        self.fitted_count += 1
 
                 except Exception:
                     logger.debug("Forecast skipped for %s", station, exc_info=True)

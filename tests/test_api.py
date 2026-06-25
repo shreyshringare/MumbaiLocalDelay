@@ -181,3 +181,13 @@ def test_methodology_returns_200(client: TestClient) -> None:
 def test_insights_function_importable_from_analysis() -> None:
     """make_business_insights must live in analysis.insights, not dashboard.charts."""
     from analysis.insights import make_business_insights  # noqa: F401
+
+
+def test_forecast_cache_exposes_progress() -> None:
+    """ForecastCache must have fitted_count and total_count attributes."""
+    from analysis.forecasting import ForecastCache
+    cache = ForecastCache()
+    assert hasattr(cache, "fitted_count")
+    assert hasattr(cache, "total_count")
+    assert cache.fitted_count == 0
+    assert cache.total_count == 0
