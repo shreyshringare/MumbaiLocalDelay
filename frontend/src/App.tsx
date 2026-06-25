@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { DashboardTab } from './components/tabs/DashboardTab'
 import { HeatmapTab } from './components/tabs/HeatmapTab'
 import { RankingsTab } from './components/tabs/RankingsTab'
 import { AnomalyTab } from './components/tabs/AnomalyTab'
@@ -13,15 +15,16 @@ import { MapTab } from './components/tabs/MapTab'
 import { AskAITab } from './components/tabs/AskAITab'
 
 const TABS = [
+  { id: 'dashboard', label: 'Dashboard' },
   { id: 'map', label: 'Station Map' },
   { id: 'heatmap', label: 'Heatmap' },
   { id: 'rankings', label: 'Rankings' },
   { id: 'anomaly', label: 'Anomaly Alerts' },
   { id: 'lines', label: 'Line Comparison' },
-  { id: 'quality', label: 'Data Quality' },
-  { id: 'insights', label: 'Business Insights' },
   { id: 'prediction', label: 'Prediction' },
   { id: 'correlation', label: 'Correlation' },
+  { id: 'quality', label: 'Data Quality' },
+  { id: 'insights', label: 'Business Insights' },
   { id: 'methodology', label: 'Methodology' },
   { id: 'ask', label: 'Ask AI' },
 ] as const
@@ -30,6 +33,7 @@ type TabId = (typeof TABS)[number]['id']
 
 function renderTab(tab: TabId): ReactNode {
   switch (tab) {
+    case 'dashboard': return <DashboardTab />
     case 'heatmap': return <HeatmapTab />
     case 'rankings': return <RankingsTab />
     case 'anomaly': return <AnomalyTab />
@@ -46,21 +50,19 @@ function renderTab(tab: TabId): ReactNode {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('map')
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '16px' }}>
-      {/* Header */}
       <div style={{ marginBottom: '16px' }}>
         <h1 style={{ color: '#E9C46A', fontSize: '22px', fontWeight: 700 }}>
           Mumbai Local Train Delay Visualizer
         </h1>
         <p style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>
-          Simulated delays calibrated on real Indian Railways data · Prophet forecast · 120+ stations
+          Prophet forecast · DuckDB analytics · 120+ stations · Central, Western, Harbour
         </p>
       </div>
 
-      {/* Tab bar */}
       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '16px', borderBottom: '1px solid #333', paddingBottom: '8px' }}>
         {TABS.map(tab => (
           <button
@@ -82,9 +84,18 @@ export default function App() {
         ))}
       </div>
 
-      {/* Tab content */}
       <div style={{ minHeight: '400px', background: '#16213e', borderRadius: '8px', padding: '16px' }}>
-        {renderTab(activeTab)}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+          >
+            {renderTab(activeTab)}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   )
