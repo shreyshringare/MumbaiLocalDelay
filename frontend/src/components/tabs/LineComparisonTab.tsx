@@ -49,8 +49,8 @@ export function LineComparisonTab() {
           ]}
           layout={{
             ...darkLayout,
-            title: { text: '30-Day Line Comparison' },
-            yaxis: { ...darkLayout.yaxis, title: { text: 'Avg Delay (min)' } },
+            title: { text: '30-Day Latency Comparison by Line' },
+            yaxis: { ...darkLayout.yaxis, title: { text: 'Avg Latency (min)' } },
             legend: { bgcolor: '#1e2a3e', bordercolor: '#333' },
           }}
           style={{ width: '100%', height: '400px' }}

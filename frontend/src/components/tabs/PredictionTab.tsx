@@ -103,8 +103,8 @@ export function PredictionTab() {
           ]}
           layout={{
             ...darkLayout,
-            title: { text: `7-Day Forecast — ${station}` },
-            yaxis: { ...darkLayout.yaxis, title: { text: 'Predicted Delay (min)' } },
+            title: { text: `7-Day Latency Forecast — ${station}` },
+            yaxis: { ...darkLayout.yaxis, title: { text: 'Predicted Latency (min)' } },
           }}
           style={{ width: '100%', height: '400px' }}
           config={{ responsive: true, displayModeBar: false }}

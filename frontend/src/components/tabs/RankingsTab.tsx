@@ -60,8 +60,8 @@ export function RankingsTab() {
           }]}
           layout={{
             ...darkLayout,
-            title: { text: `${line} Line Rankings — ${period.replace(/_/g, ' ')}` },
-            yaxis: { ...darkLayout.yaxis, title: { text: 'Avg Delay (min)' } },
+            title: { text: `${line} Line — Station Latency Rankings (${period.replace(/_/g, ' ')})` },
+            yaxis: { ...darkLayout.yaxis, title: { text: 'Avg Latency (min)' } },
           }}
           style={{ width: '100%', height: '400px' }}
           config={{ responsive: true, displayModeBar: false }}

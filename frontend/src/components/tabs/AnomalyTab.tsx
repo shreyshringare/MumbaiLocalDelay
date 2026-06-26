@@ -18,9 +18,9 @@ function AnomalyCard({ entry }: { entry: AnomalyEntry }) {
         <span style={{ color: '#888', fontSize: '12px' }}>{entry.date}</span>
       </div>
       <div style={{ color: '#ccc', fontSize: '13px' }}>
-        <span>Actual: <strong style={{ color: '#E63946' }}>{entry.actual.toFixed(1)} min</strong></span>
+        <span>Actual Latency: <strong style={{ color: '#E63946' }}>{entry.actual.toFixed(1)} min</strong></span>
         {' · '}
-        <span>Expected: {entry.expected.toFixed(1)} min</span>
+        <span>Expected Latency: {entry.expected.toFixed(1)} min</span>
         {' · '}
         <span>Severity: <strong style={{ color }}>{entry.severity}</strong></span>
       </div>
@@ -36,7 +36,7 @@ export function AnomalyTab() {
 
   return (
     <div>
-      <h3 style={{ color: '#eaeaea', marginBottom: '12px', fontSize: '16px' }}>Anomaly Alerts — Prophet 95% CI</h3>
+      <h3 style={{ color: '#eaeaea', marginBottom: '12px', fontSize: '16px' }}>SLA Breach Alerts — Prophet 95% CI</h3>
       {isLoading && <LoadingSpinner />}
       {error && <ErrorMessage message={error instanceof Error ? error.message : String(error)} />}
       {data && data.length === 0 && <p style={{ color: '#888' }}>No anomalies detected.</p>}

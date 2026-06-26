@@ -93,10 +93,10 @@ export function DashboardTab() {
       {/* KPI chips */}
       {insights && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
-          <KpiChip label="Worst Station" value={insights.worst_station} detail={`${insights.worst_delay.toFixed(1)} min avg delay`} accent="#E63946" />
-          <KpiChip label="Best Line" value={insights.best_line} detail={`${insights.best_line_delay.toFixed(1)} min avg delay`} accent="#2a9d8f" />
+          <KpiChip label="Highest Latency Node" value={insights.worst_station} detail={`${insights.worst_delay.toFixed(1)} min avg latency`} accent="#E63946" />
+          <KpiChip label="Best SLA Line" value={insights.best_line} detail={`${insights.best_line_delay.toFixed(1)} min avg latency`} accent="#2a9d8f" />
           <KpiChip label="Pax-hrs Lost/Day" value={insights.delay_hours_per_day.toLocaleString()} detail="est. at ±20% uncertainty" accent="#E9C46A" />
-          <KpiChip label="Peak Window" value={insights.peak_window} detail="Highest delay period" accent="#A8DADC" />
+          <KpiChip label="Peak Congestion Window" value={insights.peak_window} detail="Highest latency period" accent="#A8DADC" />
         </div>
       )}
     </div>

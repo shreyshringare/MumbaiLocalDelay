@@ -61,6 +61,27 @@ Sandhurst Road (Harbour line) shows **3.3× higher delays in June–September** 
 
 ---
 
+## Fintech Transferability
+
+This is a transit analytics project — but every analytical pattern maps directly to financial services work:
+
+| Transit Concept | Fintech Equivalent | Technique Used |
+|---|---|---|
+| Train delay (minutes late) | Trade execution latency, settlement lag | Time-series aggregation, percentile analysis |
+| SLA breach (delay > 95% CI bound) | Circuit breaker trigger, SLA violation | Prophet anomaly detection, severity classification |
+| Tail-risk latency (p95 delay) | Value-at-Risk (VaR), tail-risk exposure | `PERCENTILE_CONT(0.95)` window function |
+| Peak hours (market open/close analog) | Market open volatility, end-of-day settlement | Period segmentation, conditional aggregation |
+| Cascade correlation (Dadar → network) | Contagion risk, desk-to-desk P&L spillover | Pearson r via `CORR()` self-join |
+| Week-over-week delay change | WoW revenue/volume change, PnL attribution | `LAG()` multi-step CTE |
+| Station ranking per line | Trading desk ranking by metric, top-N analysis | `RANK() OVER (PARTITION BY ...)` |
+| Monsoon seasonal uplift | Earnings season volatility, quarter-end spikes | Prophet yearly seasonality, conditional aggregation pivot |
+| NL → SQL query interface | Analyst self-serve: "show me top desks by loss today" | LLM prompt engineering, SQL safety guardrails |
+| Excel export + VBA automation | Risk report distribution, automated workbook refresh | Streaming `.xlsx` API endpoint, `Workbook_Open` macro |
+
+> The domain is trains. The skills are transferable on day one.
+
+---
+
 ## Skills Demonstrated
 
 | Skill | Where |
@@ -68,12 +89,12 @@ Sandhurst Road (Harbour line) shows **3.3× higher delays in June–September** 
 | **SQL** — window functions, CTEs, LAG, PERCENTILE_CONT, CORR(), conditional aggregation | `analysis/sql_queries.py` |
 | **Data pipeline** — GTFS ingestion, Polars transforms, DuckDB analytical store | `pipeline/` |
 | **Python** — typed classes, parameterized queries, pure chart factories, 131 tests | `pipeline/store.py`, `dashboard/charts.py`, `tests/` |
-| **Data visualization** — 9-tab interactive dashboard, heatmaps, trend lines, CI bars, Prophet forecast, Pearson correlation | `dashboard/` |
+| **Data visualization** — 12-tab interactive dashboard, heatmaps, trend lines, CI bars, Prophet forecast, Pearson correlation | `frontend/src/components/tabs/` |
 | **Anomaly detection** — Prophet time series, 95% confidence bounds, severity classification | `analysis/anomaly.py` |
 | **Forecasting** — Prophet 7-day delay forecast per station, 95% CI bands, background pre-compute | `analysis/forecasting.py`, Prediction tab |
 | **Correlation analysis** — Pearson r co-delay matrix via DuckDB CORR() self-join, top-15 per line | `analysis/correlation.py`, Correlation tab |
 | **Data quality** — freshness monitoring, row counts, graceful empty states | `pipeline/store.py`, dashboard Data Quality tab |
-| **Business translation** — delay → passenger-hours lost → economic impact estimate | `dashboard/charts.py`, Business Insights tab |
+| **Business translation** — delay → passenger-hours lost → economic impact estimate | `api/routers/meta.py`, Business Insights tab |
 | **Real data integration** — etrain.info scraping, intercity-to-local calibration, data provenance documentation | `pipeline/ingest/real_data.py` |
 | **LLM integration** — natural language → SQL → DuckDB via Claude API, prompt engineering, SQL safety guardrails | `api/routers/ask.py`, Ask AI tab |
 | **Full-stack automation** — FastAPI REST backend, React 19 + TypeScript frontend, GitHub Actions nightly pipeline, Render deployment | `api/`, `frontend/`, `.github/workflows/` |
@@ -186,21 +207,23 @@ The Rankings tab surfaces the worst stations; Query 10 in `sql_showcase.sql` con
 
 ---
 
-## Dashboard (9 tabs)
+## Dashboard (12 tabs)
 
-Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
+Built with React 19 + TypeScript + Vite. All charts via react-plotly.js powered by DuckDB queries through a FastAPI REST backend.
 
 | Tab | What it shows |
 |---|---|
-| Live Map | Folium map — stations color-coded by delay severity |
-| Heatmap | Station × hour delay matrix (weekday × 24h) |
-| Rankings | Worst/best stations per line per period, with 95% CI bars |
-| Anomaly Alerts | Prophet-detected stations exceeding 95% confidence bound |
-| Line Comparison | Central vs Western vs Harbour — 30-day trend |
-| Data Quality | Pipeline freshness, row counts, unique dates per station |
-| Business Insights | Plain-English callouts + economic impact estimate |
+| Dashboard | Wave animation (per-station latency by hour), KPI chips, line selector |
+| Station Map | Leaflet map — stations color-coded by latency severity |
+| Heatmap | Station × hour latency matrix (weekday × 24h) |
+| Rankings | Worst stations per line per period, with 95% CI bars |
+| SLA Breach Alerts | Prophet-detected stations exceeding 95% confidence bound |
+| Line Comparison | Central vs Western vs Harbour — 30-day latency trend |
 | Prediction | Prophet 7-day forecast per station with 95% CI band |
-| Correlation | Station co-delay Pearson r heatmap — top 15 per line |
+| Correlation | Station co-latency Pearson r heatmap — top 15 per line |
+| Data Quality | Pipeline freshness, row counts, unique dates per station |
+| Business Insights | Excel export — formatted .xlsx with 5 analyst-ready sheets |
+| Methodology | Technique documentation (Prophet, CI, correlation) |
 | Ask AI | Natural language question → Claude-generated SQL → live DuckDB result |
 
 ### Live Map
@@ -235,22 +258,26 @@ Built with Plotly Dash + Folium. All charts powered by DuckDB queries.
 ## Architecture
 
 ```
-GTFS Static Data              etrain.info Delay Baselines
-      ↓                              ↓
-  httpx fetch → GTFS parser    9 Mumbai stations
-  120 stations, routes         real intercity delay stats
-      ↓                              ↓
-  Polars transform         Simulator calibration (base_mean override)
-      ↓___________________________|
-      ↓
+etrain_delays.csv (real baselines)    GTFS station registry (120 stations)
+         ↓                                        ↓
+  load_mumbai_baselines()              pipeline/ingest/stations.py
+         ↓                                        ↓
   DelaySimulator — Gaussian model per (station, hour, period)
-  Calibrated to real intercity baselines for 9 stations
-      ↓
-  DuckDB store → typed query methods, parameterized queries
-      ↓
-  Prophet anomaly detection → per-station 95% confidence bounds
-      ↓
-  Plotly Dash dashboard → 9 interactive tabs
+  Calibrated to real etrain baselines · monsoon uplift · DOW factors
+         ↓
+  pipeline/transform/ — Polars clean + feature engineering (CI, on_time_pct)
+         ↓
+  delays.duckdb — DuckDB analytical store (DelayStore typed query methods)
+         ↓
+  analysis/ — rankings, anomaly (Prophet), forecasting (Prophet), correlation (CORR)
+         ↓
+  FastAPI (api/) — 12 REST endpoints, Pydantic schemas, DI via deps.py
+     ├── /api/ask — NL → Claude Haiku SQL → DuckDB
+     ├── /api/export/excel — streaming .xlsx (5 sheets)
+     └── /api/forecast/status — Prophet build progress
+         ↓
+  React 19 SPA (frontend/) — 12 tabs, TanStack Query, react-plotly.js
+  Built into api/static/ for single-process prod deployment
 ```
 
 ---
@@ -262,7 +289,7 @@ GTFS Static Data              etrain.info Delay Baselines
 | Data processing | Polars | Rust-backed, lazy evaluation, Arrow IPC |
 | Analytics store | DuckDB | Columnar, SQL-native, zero-infrastructure |
 | Anomaly detection | Prophet (Meta) | Handles seasonality without tuning |
-| Dashboard | Plotly Dash + Folium | Python-native, no JS required |
+| Dashboard | React 19 + TypeScript + Vite | Strict TS, component isolation, hot reload |
 | Deploy | Render | Zero-config deploy from repo |
 | LLM | Anthropic Claude Haiku | Natural language → SQL generation |
 | REST API | FastAPI + uvicorn | Typed endpoints, Pydantic schemas, CORS |
@@ -290,17 +317,17 @@ MumbaiLocal/
 │   ├── delays.py                  # station_delay_matrix() — hour × weekday aggregation
 │   └── rankings.py                # line_summary(), peak_rankings()
 │
-├── dashboard/                     # Plotly Dash app (9 tabs)
-│   ├── app.py                     # Main app — layout, callbacks, tab routing
-│   ├── charts.py                  # Plotly figure factories (pure functions, no side effects)
-│   └── map.py                     # Folium station map, delay-coloured markers
+├── frontend/                      # React 19 + TypeScript SPA (12 tabs)
+│   ├── src/
+│   │   ├── App.tsx                # Tab router, Framer Motion transitions
+│   │   ├── api.ts                 # Typed API client (TanStack Query)
+│   │   ├── components/tabs/       # 12 tab components (Plotly charts, Leaflet map)
+│   │   └── components/WaveCanvas.tsx  # Canvas RAF wave animation (Dashboard)
+│   └── vite.config.ts             # Dev proxy → :8000, build → api/static/
 │
-├── notebooks/
-│   └── eda_mumbai_delays.ipynb   # Hypothesis-driven EDA: monsoon, cascade, peak signature
-│
-├── tests/                         # 131 tests — TDD throughout
+├── tests/                         # pytest test suite — TDD throughout
 │   ├── test_store.py              # DelayStore query methods
-│   ├── test_charts.py             # Chart factories (shape, traces, no crash)
+│   ├── test_api.py                # FastAPI endpoint tests (mock store)
 │   ├── test_anomaly.py            # Prophet anomaly detector
 │   ├── test_rankings.py           # Rankings + line summary
 │   ├── test_forecasting.py        # ForecastCache + daily_avg()
@@ -320,9 +347,12 @@ MumbaiLocal/
 
 ```bash
 uv sync --extra dev
-cp .env.example .env
-uv run python -m pipeline.ingest.simulator  # generate delay history
-uv run python -m dashboard.app              # start dashboard at localhost:8050
+cp .env.example .env                        # add ANTHROPIC_API_KEY for Ask AI tab
+uv run python scripts/seed_db.py            # populate delays.duckdb
+uvicorn api.main:app --reload               # API at localhost:8000
+
+# Frontend (dev)
+cd frontend && npm install && npm run dev   # React SPA at localhost:5173
 ```
 
 ---
@@ -334,7 +364,7 @@ uv run python -m dashboard.app              # start dashboard at localhost:8050
 | Stations covered | 120+ |
 | Historical data | 2 years simulated · calibrated to real etrain.info station baselines |
 | Anomaly precision | ~87% recall on held-out incident days |
-| Dashboard tabs | 11 (incl. Ask AI + Methodology) |
+| Dashboard tabs | 12 (incl. Ask AI, Methodology, WaveCanvas Dashboard) |
 | Test coverage | 131 passing tests |
 | Worst station | Dadar CR — avg 8.3 min |
 | Best line | Harbour — avg 2.1 min |

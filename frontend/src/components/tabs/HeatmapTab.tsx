@@ -35,11 +35,11 @@ export function HeatmapTab() {
             type: 'heatmap',
             z: data.matrix,
             colorscale: [[0, '#2a9d8f'], [0.5, '#e9c46a'], [1, '#e63946']] as [number, string][],
-            colorbar: { title: { text: 'Avg Delay (min)' } },
+            colorbar: { title: { text: 'Avg Latency (min)' } },
           }]}
           layout={{
             ...darkLayout,
-            title: { text: `Delay Heatmap — ${data.station}` },
+            title: { text: `Latency Heatmap — ${data.station}` },
             xaxis: { ...darkLayout.xaxis, title: { text: 'Hour of Day' } },
             yaxis: {
               ...darkLayout.yaxis,
