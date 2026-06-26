@@ -38,19 +38,20 @@ export function AskAITab() {
   }
 
   const examples = [
-    'Which station has the highest average delay?',
-    'What are the top 5 worst stations on Central line?',
-    'How does Monday compare to Sunday for average delays?',
-    'Which stations have delays above 8 minutes during morning peak?',
+    'Which station has the highest tail-risk latency (p95) on Central line?',
+    'What are the top 5 worst SLA compliance stations during morning peak?',
+    'How does Monday compare to Sunday for average latency?',
+    'Which stations breach the 8-minute latency threshold during morning peak?',
+    'Show week-over-week latency change for Western line this year.',
   ]
 
   return (
     <div style={{ maxWidth: '800px' }}>
       <h3 style={{ color: '#eaeaea', marginBottom: '8px', fontSize: '16px' }}>
-        Ask AI — Natural Language Data Query
+        Ask AI — Natural Language Analytics Interface
       </h3>
       <p style={{ color: '#888', fontSize: '13px', marginBottom: '16px' }}>
-        Ask any question about Mumbai train delays. Claude generates SQL and runs it live.
+        Plain-English question → Claude generates DuckDB SQL → live result. Analyst self-serve without writing SQL.
       </p>
 
       <form onSubmit={handleSubmit} style={{ marginBottom: '16px' }}>

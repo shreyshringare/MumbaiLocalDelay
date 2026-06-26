@@ -88,7 +88,7 @@ This is a transit analytics project — but every analytical pattern maps direct
 |---|---|
 | **SQL** — window functions, CTEs, LAG, PERCENTILE_CONT, CORR(), conditional aggregation | `analysis/sql_queries.py` |
 | **Data pipeline** — GTFS ingestion, Polars transforms, DuckDB analytical store | `pipeline/` |
-| **Python** — typed classes, parameterized queries, pure chart factories, 131 tests | `pipeline/store.py`, `dashboard/charts.py`, `tests/` |
+| **Python** — typed classes, parameterized queries, DI patterns, mypy strict, 14 test modules | `pipeline/store.py`, `api/routers/`, `tests/` |
 | **Data visualization** — 12-tab interactive dashboard, heatmaps, trend lines, CI bars, Prophet forecast, Pearson correlation | `frontend/src/components/tabs/` |
 | **Anomaly detection** — Prophet time series, 95% confidence bounds, severity classification | `analysis/anomaly.py` |
 | **Forecasting** — Prophet 7-day delay forecast per station, 95% CI bands, background pre-compute | `analysis/forecasting.py`, Prediction tab |
@@ -98,20 +98,6 @@ This is a transit analytics project — but every analytical pattern maps direct
 | **Real data integration** — etrain.info scraping, intercity-to-local calibration, data provenance documentation | `pipeline/ingest/real_data.py` |
 | **LLM integration** — natural language → SQL → DuckDB via Claude API, prompt engineering, SQL safety guardrails | `api/routers/ask.py`, Ask AI tab |
 | **Full-stack automation** — FastAPI REST backend, React 19 + TypeScript frontend, GitHub Actions nightly pipeline, Render deployment | `api/`, `frontend/`, `.github/workflows/` |
-
----
-
-## Key Findings
-
-| Question | Answer |
-|---|---|
-| Worst station | Thakurli (Central) — avg **6.55 min** delay |
-| Most reliable line | Harbour — avg **3.7 min**, 36% on-time |
-| Central on-time rate | **22%** — lowest of three lines |
-| Cascade strength | Dadar → Vikhroli/Thane r = **0.97** |
-| Monsoon worst hit | Sandhurst Road **3.3×** delay Jun–Sep vs dry |
-| Economic cost (Central line) | **~45,000 passenger-hours lost/day** at peak |
-| Anomaly detection | **~87%** recall on incident days (Prophet 95% CI) |
 
 ---
 
@@ -226,32 +212,6 @@ Built with React 19 + TypeScript + Vite. All charts via react-plotly.js powered 
 | Methodology | Technique documentation (Prophet, CI, correlation) |
 | Ask AI | Natural language question → Claude-generated SQL → live DuckDB result |
 
-### Live Map
-![Live Map](docs/screenshots/tab_live_map.png)
-
-### Heatmap — station × hour delay matrix
-![Heatmap](docs/screenshots/tab_heatmap.png)
-
-### Rankings — worst/best stations with 95% CI bars
-![Rankings](docs/screenshots/tab_rankings.png)
-
-### Anomaly Alerts — Prophet-detected spikes
-![Anomaly Alerts](docs/screenshots/tab_anomaly.png)
-
-### Line Comparison — 30-day trend
-![Line Comparison](docs/screenshots/tab_line_comparison.png)
-
-### Data Quality — pipeline health
-![Data Quality](docs/screenshots/tab_data_quality.png)
-
-### Business Insights — economic impact
-![Business Insights](docs/screenshots/tab_business_insights.png)
-
-### Prediction — Prophet 7-day forecast with 95% CI
-![Prediction](docs/screenshots/tab_prediction.png)
-
-### Correlation — station co-delay Pearson r heatmap
-![Correlation](docs/screenshots/tab_correlation.png)
 
 ---
 
