@@ -212,6 +212,34 @@ Built with React 19 + TypeScript + Vite. All charts via react-plotly.js powered 
 | Methodology | Technique documentation (Prophet, CI, correlation) |
 | Ask AI | Natural language question → Claude-generated SQL → live DuckDB result |
 
+### Screenshots
+
+<table>
+  <tr>
+    <td><strong>Station Map</strong><br><img src="docs/screenshots/tab_live_map.png" width="420" alt="Station Map"/></td>
+    <td><strong>Heatmap</strong><br><img src="docs/screenshots/tab_heatmap.png" width="420" alt="Heatmap"/></td>
+  </tr>
+  <tr>
+    <td><strong>Rankings</strong><br><img src="docs/screenshots/tab_rankings.png" width="420" alt="Rankings"/></td>
+    <td><strong>Line Comparison</strong><br><img src="docs/screenshots/tab_line_comparison.png" width="420" alt="Line Comparison"/></td>
+  </tr>
+  <tr>
+    <td><strong>SLA Breach Alerts</strong><br><img src="docs/screenshots/tab_anomaly.png" width="420" alt="SLA Breach Alerts"/></td>
+    <td><strong>Prediction</strong><br><img src="docs/screenshots/tab_prediction.png" width="420" alt="Prediction"/></td>
+  </tr>
+  <tr>
+    <td><strong>Correlation</strong><br><img src="docs/screenshots/tab_correlation.png" width="420" alt="Correlation"/></td>
+    <td><strong>Business Insights</strong><br><img src="docs/screenshots/tab_business_insights.png" width="420" alt="Business Insights"/></td>
+  </tr>
+  <tr>
+    <td><strong>Data Quality</strong><br><img src="docs/screenshots/tab_data_quality.png" width="420" alt="Data Quality"/></td>
+    <td><strong>Dashboard</strong><br><img src="docs/screenshots/tab_dashboard.png" width="420" alt="Dashboard"/></td>
+  </tr>
+  <tr>
+    <td><strong>Methodology</strong><br><img src="docs/screenshots/tab_methodology.png" width="420" alt="Methodology"/></td>
+    <td><strong>Ask AI</strong><br><img src="docs/screenshots/tab_ask_ai.png" width="420" alt="Ask AI"/></td>
+  </tr>
+</table>
 
 ---
 
