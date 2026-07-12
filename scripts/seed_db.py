@@ -53,6 +53,7 @@ def main() -> None:
             zip(
                 baselines_df["station_name"].to_list(),
                 baselines_df["avg_delay_real"].to_list(),
+                strict=False,
             )
         )
         log.info("Real baselines: %s", baselines)

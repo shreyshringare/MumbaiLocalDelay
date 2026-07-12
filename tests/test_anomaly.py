@@ -4,7 +4,7 @@ from datetime import date, timedelta
 import polars as pl
 import pytest
 
-from analysis.anomaly import DelayAnomalyDetector, AnomalyResult, AnomalyBatch
+from analysis.anomaly import AnomalyBatch, AnomalyResult, DelayAnomalyDetector
 
 
 def _make_history(station: str, n_days: int = 400, base_delay: float = 5.0) -> pl.DataFrame:

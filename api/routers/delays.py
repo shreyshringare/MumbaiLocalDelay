@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import polars as pl
 from fastapi import APIRouter, Depends, Query
 
 from analysis.rankings import peak_rankings
@@ -16,7 +15,7 @@ router = APIRouter(tags=["delays"])
 @router.get("/heatmap", response_model=HeatmapResponse)
 def get_heatmap(
     station: str = Query(default="Dadar CR", description="Station name"),
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> HeatmapResponse:
     """7×24 delay heatmap (weekday × hour) for a station."""
     df = store.heatmap(station)
@@ -37,7 +36,7 @@ def get_heatmap(
 def get_rankings(
     line: str = Query(default="Central", description="Line name: Central, Western, or Harbour"),
     period: str = Query(default="morning_peak", description="Period: morning_peak, evening_peak, off_peak, night"),
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> list[RankingEntry]:
     """Top stations by avg delay for a specific line and period."""
     df = peak_rankings(store, line, period)
@@ -58,7 +57,7 @@ def get_rankings(
 @router.get("/line-trend", response_model=list[LineTrendPoint])
 def get_line_trend(
     line: str = Query(default="Central", description="Line name: Central, Western, or Harbour"),
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> list[LineTrendPoint]:
     """30-day avg delay trend for a line."""
     df = store.line_trend(line)

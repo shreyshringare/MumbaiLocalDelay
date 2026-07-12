@@ -76,7 +76,7 @@ def _run_sql(store: DelayStore, sql: str) -> str:
 @router.post("/ask", response_model=AskResponse)
 def ask_question(
     body: AskRequest,
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> AskResponse:
     """Translate a natural language question to SQL and execute it."""
     api_key = os.getenv("ANTHROPIC_API_KEY")

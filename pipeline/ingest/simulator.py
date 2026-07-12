@@ -87,7 +87,7 @@ def _station_personality(station_name: str) -> float:
 
 def _get_incident_stations(
     year: int, month: int, line: str, stations: list[str], rate: int
-) -> dict[tuple[str, "date"], float]:
+) -> dict[tuple[str, date], float]:
     """Return dict of (station, date) -> multiplier for incident days.
 
     Seeded by (year, month, line) for reproducibility.
@@ -95,7 +95,7 @@ def _get_incident_stations(
     import calendar as _calendar
     rng = random.Random(f"{year}-{month}-{line}")
     _, days_in_month = _calendar.monthrange(year, month)
-    incidents: dict[tuple[str, "date"], float] = {}
+    incidents: dict[tuple[str, date], float] = {}
     if not stations:
         return incidents
     for _ in range(rate):
@@ -151,7 +151,7 @@ class DelaySimulator:
         station_list = self._stops["station_name"].to_list()
         lines_list = self._stops["line"].to_list() if "line" in self._stops.columns else ["Western"] * len(station_list)
         line_to_stations: dict[str, list[str]] = {}
-        for _st, _ln in zip(station_list, lines_list):
+        for _st, _ln in zip(station_list, lines_list, strict=False):
             line_to_stations.setdefault(str(_ln), []).append(_st)
 
         while current <= end_date:

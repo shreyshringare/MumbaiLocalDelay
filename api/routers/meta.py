@@ -8,12 +8,12 @@ from typing import Any
 import polars as pl
 from fastapi import APIRouter, Depends, HTTPException
 
-logger = logging.getLogger(__name__)
-
+from analysis.insights import make_business_insights
 from api.deps import get_store
 from api.schemas import InsightsResponse, QualityEntry, StationDelay
-from analysis.insights import make_business_insights
 from pipeline.store import DelayStore
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["meta"])
 
@@ -32,7 +32,7 @@ def _load_stops() -> pl.DataFrame:
 
 @router.get("/map-data", response_model=list[StationDelay])
 def get_map_data(
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> list[StationDelay]:
     """Worst 200 stations per line, joined with lat/lon from stops parquet."""
     stops = _load_stops()
@@ -78,7 +78,7 @@ def get_map_data(
 
 @router.get("/quality", response_model=list[QualityEntry])
 def get_quality(
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> list[QualityEntry]:
     """Data freshness and completeness report per station."""
     df = store.data_quality_report()
@@ -98,13 +98,13 @@ def get_quality(
 
 @router.get("/insights", response_model=InsightsResponse)
 def get_insights(
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> InsightsResponse:
     """High-level business insights derived from the delay dataset."""
     try:
         data = make_business_insights(store)
     except Exception:
-        raise HTTPException(status_code=503, detail="Insights unavailable")
+        raise HTTPException(status_code=503, detail="Insights unavailable") from None
     return InsightsResponse(
         worst_station=str(data.get("worst_station", "N/A")),
         worst_delay=float(data.get("worst_station_delay", 0.0)),

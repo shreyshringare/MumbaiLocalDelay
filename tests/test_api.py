@@ -9,7 +9,7 @@ spawns a background thread.
 
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import polars as pl
@@ -21,8 +21,8 @@ from starlette.testclient import TestClient
 # singleton _forecast_cache = ForecastCache() doesn't try to build Prophet.
 # ---------------------------------------------------------------------------
 with patch("analysis.forecasting.ForecastCache", MagicMock):
-    from api.main import app
     from api.deps import get_store
+    from api.main import app
 
 
 # ---------------------------------------------------------------------------

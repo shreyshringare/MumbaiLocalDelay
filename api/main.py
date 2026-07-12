@@ -1,11 +1,13 @@
 """FastAPI application entry point for Mumbai Local Delay API."""
 
 import logging
+import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from api.routers import analysis, ask, delays, export, meta
 
@@ -47,9 +49,6 @@ app.include_router(analysis.router, prefix="/api")
 app.include_router(meta.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
 app.include_router(ask.router, prefix="/api")
-
-import os
-from fastapi.staticfiles import StaticFiles
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.isdir(static_dir):

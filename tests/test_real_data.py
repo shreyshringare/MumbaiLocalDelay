@@ -1,10 +1,13 @@
 """Tests for pipeline/ingest/real_data.py"""
 
-import pytest
-import polars as pl
 from pathlib import Path
-from pipeline.ingest.real_data import load_mumbai_baselines, write_baselines, MUMBAI_CODES
 
+import polars as pl
+import pytest
+
+from pipeline.ingest.real_data import (
+    load_mumbai_baselines,
+)
 
 REAL_CSV = Path("data/raw/real/etrain_delays.csv")
 

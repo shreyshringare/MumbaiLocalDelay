@@ -18,6 +18,10 @@ ignore = [
 [lint.isort]
 known-first-party = ["pipeline", "analysis", "dashboard"]
 
+[lint.per-file-ignores]
+"notebooks/*.ipynb" = ["C408", "E402", "I001"]
+"tests/test_charts.py" = ["I001", "F401"]
+
 [format]
 quote-style = "double"
 indent-style = "space"

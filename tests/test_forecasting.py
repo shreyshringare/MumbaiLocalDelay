@@ -90,6 +90,7 @@ class TestForecastCache:
     @pytest.mark.timeout(120)
     def test_build_returns_tuple_of_dataframes(self) -> None:
         import pandas as pd
+
         from analysis.forecasting import ForecastCache
         store = _make_store(n_days=60)
         cache = ForecastCache()

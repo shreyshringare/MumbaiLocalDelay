@@ -35,7 +35,7 @@ def start_forecast_cache(store: DelayStore) -> None:
 
 @router.get("/anomalies", response_model=list[AnomalyEntry])
 def get_anomalies(
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> list[AnomalyEntry]:
     """Anomaly detection across top 5 stations per line (Central, Western, Harbour)."""
     lines = ["Central", "Western", "Harbour"]
@@ -108,7 +108,7 @@ def get_anomalies(
 @router.get("/correlation")
 def get_correlation(
     line: str = Query(default="Central", description="Line name: Central, Western, or Harbour"),
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> dict[str, Any]:
     """Pearson r correlation matrix for top-15 stations on a line."""
     try:
@@ -156,7 +156,7 @@ def get_forecast(
 @router.get("/wave-data", response_model=list[WaveStation])
 def get_wave_data(
     line: str = Query("Central", pattern="^(Central|Western|Harbour)$"),
-    store: DelayStore = Depends(get_store),
+    store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> list[WaveStation]:
     """Per-hour avg delay for top 15 stations on a line — powers the Dashboard wave."""
     df = store.wave_data(line)

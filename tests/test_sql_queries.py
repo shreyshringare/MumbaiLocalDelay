@@ -6,7 +6,11 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from analysis.sql_queries import monsoon_vs_dry_pivot, rolling_deviation, yoy_delay_change
+from analysis.sql_queries import (
+    monsoon_vs_dry_pivot,
+    rolling_deviation,
+    yoy_delay_change,
+)
 from pipeline.store import DelayStore
 
 

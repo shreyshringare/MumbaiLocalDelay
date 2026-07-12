@@ -12,12 +12,10 @@ Used by: React frontend export button + VBA macro (excel/RefreshData.bas).
 
 from __future__ import annotations
 
-import io
 import datetime
+import io
 import logging
 from typing import Any
-
-logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
@@ -25,6 +23,8 @@ from fastapi.responses import StreamingResponse
 from analysis.rankings import peak_rankings
 from api.deps import get_store
 from pipeline.store import DelayStore
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["export"])
 
@@ -43,14 +43,14 @@ def _build_workbook(store: DelayStore) -> io.BytesIO:
     """Build the Excel workbook in memory and return a BytesIO buffer."""
     try:
         import openpyxl  # type: ignore[import]
+        from openpyxl.formatting.rule import ColorScaleRule  # type: ignore[import]
         from openpyxl.styles import (  # type: ignore[import]
-            Font,
-            PatternFill,
             Alignment,
             Border,
+            Font,
+            PatternFill,
             Side,
         )
-        from openpyxl.formatting.rule import ColorScaleRule  # type: ignore[import]
         from openpyxl.utils import get_column_letter  # type: ignore[import]
     except ImportError as exc:
         raise RuntimeError("openpyxl not installed — run: uv add openpyxl") from exc
@@ -149,8 +149,10 @@ def _build_workbook(store: DelayStore) -> io.BytesIO:
 
     try:
         import datetime as _dt
-        from analysis.anomaly import AnomalyBatch
+
         import polars as pl
+
+        from analysis.anomaly import AnomalyBatch
 
         all_lines = ["Central", "Western", "Harbour"]
         top_stations: list[str] = []
@@ -300,7 +302,6 @@ def _build_workbook(store: DelayStore) -> io.BytesIO:
         central_morning = _pr(store, "Central", "morning_peak")
         worst_station = central_morning["station_name"][0] if len(central_morning) > 0 else "N/A"
         worst_delay = float(central_morning["avg_delay"][0]) if len(central_morning) > 0 else 0.0
-        best_line = "Western"  # derive from line trend averages
         metrics = [
             ("Worst Station (Central Morning)", worst_station, "Highest avg delay — Central line AM peak"),
             ("Worst Delay", f"{worst_delay:.1f} min", "Avg delay at worst station"),
@@ -342,7 +343,7 @@ def _build_workbook(store: DelayStore) -> io.BytesIO:
         }
     },
 )
-def export_excel(store: DelayStore = Depends(get_store)) -> StreamingResponse:
+def export_excel(store: DelayStore = Depends(get_store)) -> StreamingResponse:  # noqa: B008
     """Generate a formatted .xlsx export of all analytics data.
 
     Consumed by:
