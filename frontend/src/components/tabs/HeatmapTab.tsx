@@ -6,7 +6,7 @@ import { LoadingSpinner } from '../LoadingSpinner'
 import { ErrorMessage } from '../ErrorMessage'
 import { darkLayout } from '../darkLayout'
 
-const STATIONS = ['Dadar CR', 'CSMT', 'Thane', 'Kalyan', 'Panvel', 'Borivali', 'Andheri', 'Bandra', 'Kurla', 'Dombivli']
+const STATIONS = ['Dadar', 'Chhatrapati Shivaji Maharaj Terminus', 'Thane', 'Kalyan', 'Panvel', 'Borivali', 'Andheri', 'Bandra', 'Kurla', 'Dombivli']
 
 export function HeatmapTab() {
   const [station, setStation] = useState(STATIONS[0])

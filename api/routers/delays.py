@@ -14,7 +14,7 @@ router = APIRouter(tags=["delays"])
 
 @router.get("/heatmap", response_model=HeatmapResponse)
 def get_heatmap(
-    station: str = Query(default="Dadar CR", description="Station name"),
+    station: str = Query(default="Dadar", description="Station name"),
     store: DelayStore = Depends(get_store),  # noqa: B008
 ) -> HeatmapResponse:
     """7×24 delay heatmap (weekday × hour) for a station."""

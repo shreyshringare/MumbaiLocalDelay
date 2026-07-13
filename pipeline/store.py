@@ -115,10 +115,28 @@ class DelayStore:
             ORDER BY weekday, hour
         """,
             [station],
-        ).arrow()
-        df = pl.from_arrow(result)
-        assert isinstance(df, pl.DataFrame)
-        return df
+        ).fetchall()
+        schema = {
+            "hour": pl.Int32,
+            "weekday": pl.Int32,
+            "avg_delay": pl.Float64,
+            "ci_lower": pl.Float64,
+            "ci_upper": pl.Float64,
+            "n_records": pl.Int64,
+        }
+        if not result:
+            return pl.DataFrame(schema=schema)
+        return pl.DataFrame(
+            {
+                "hour": [r[0] for r in result],
+                "weekday": [r[1] for r in result],
+                "avg_delay": [r[2] for r in result],
+                "ci_lower": [r[3] for r in result],
+                "ci_upper": [r[4] for r in result],
+                "n_records": [r[5] for r in result],
+            },
+            schema=schema,
+        )
 
     def wave_data(self, line: str, n: int = 15) -> pl.DataFrame:
         """Per-hour avg delay for top N stations on a line.
